@@ -6,7 +6,31 @@
     <description>Recent content in Posts on Wong Der Land</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 11 Feb 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://jiuyuezai.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 21 Nov 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://jiuyuezai.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>GAMES101作业本——作业1：旋转与投影</title>
+      <link>https://jiuyuezai.github.io/2022/11/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A1%E6%97%8B%E8%BD%AC%E4%B8%8E%E6%8A%95%E5%BD%B1/</link>
+      <pubDate>Mon, 21 Nov 2022 00:00:00 +0000</pubDate>
+      
+      <guid>https://jiuyuezai.github.io/2022/11/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A1%E6%97%8B%E8%BD%AC%E4%B8%8E%E6%8A%95%E5%BD%B1/</guid>
+      <description>作业描述 填写一个旋转矩阵和一个透视投影矩阵。给定三维下三个点 v0(2.0, 0.0, −2.0), v1(0.0, 2.0, −2.0), v2(−2.0, 0.0, −2.0), 你需要将这三个点的坐标变换为屏幕坐标，并在屏幕上绘制出对应的线框三角形 。
+理解rasterizer.hpp，修改 main.cpp 中的函数：
+ get_model_matrix(float rotation_angle): 逐个元素地构建模型变换矩阵并返回该矩阵。在此函数中，只需要实现三维中绕 z 轴旋转的变换矩阵， 而不用处理平移与缩放。 get_projection_matrix(float eye_fov, float aspect_ratio, float zNear, float zFar): 使用给定的参数逐个元素地构建透视投影矩阵并返回该矩阵。 [Optional] main(): 自行补充所需的其他操作。  附加题：
+ 默认使用 A 和 D 键将该三角形绕 z 轴旋转，实现将三角形绕任意过原点的轴旋转。  解题思路   修改get_model_matrix(float rotation_angle)，题目只需要实现三维中绕 z 轴旋转的变换矩阵，矩阵如下： $$ R_z =\begin{pmatrix}cos\alpha &amp;amp;-sin\alpha &amp;amp;0 &amp;amp;0 \\sin\alpha &amp;amp;cos\alpha &amp;amp;0 &amp;amp;0 \\0 &amp;amp;0 &amp;amp;1 &amp;amp;0 \\0 &amp;amp;0 &amp;amp;0 &amp;amp;1 \\\end{pmatrix} $$</description>
+    </item>
+    
+    <item>
+      <title>GAMES101作业本——作业0：虚拟机的使用</title>
+      <link>https://jiuyuezai.github.io/2022/11/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A0%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E4%BD%BF%E7%94%A8/</link>
+      <pubDate>Wed, 16 Nov 2022 00:00:00 +0000</pubDate>
+      
+      <guid>https://jiuyuezai.github.io/2022/11/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A0%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E4%BD%BF%E7%94%A8/</guid>
+      <description>Quick Notes  C++手册 Eigen库官方文档的矩阵部分 C++三角函数运算使用弧度制 使用 cmake 进行编译。  首先，编写好本次作业的程序 main.cpp。 然后, 在 main.cpp 所在目录下，打开终端 (命令行)，依次输入：
+ mkdir build: 创建名为 build 的文件夹。 cd build: 移动到 build 文件夹下。 cmake ..: 注意其中’..’ 表示上一级目录，若为’.’ 则表示当前目录。 make: 编译程序，错误提示会显示在终端中。 ./Transformation：若上一步无错误，则可运行程序 (这里的 Transformation 为可执行文件名，可参照 CMakeLists.txt 中修改)。  作业描述 给定一个点 P=(2,1), 将该点绕原点先逆时针旋转45◦，再平移 (1,2), 计算出变换后点的坐标（要求用齐次坐标进行计算）。
+解题思路 先旋转，后平移，题目要求用其次坐标进行计算，先算出仿射矩阵再与之相乘。
+代码实现 #include&amp;lt;cmath&amp;gt;#include&amp;lt;eigen3/Eigen/Core&amp;gt;#include&amp;lt;eigen3/Eigen/Dense&amp;gt;#include&amp;lt;iostream&amp;gt; int main(){  Eigen::Vector3d P(2.0, 1.0, 1.0);  std::cout &amp;lt;&amp;lt; &amp;#34; Define point P: \n&amp;#34; &amp;lt;&amp;lt; P &amp;lt;&amp;lt; std::endl;   Eigen::Matrix3d rotation;  Eigen::Matrix3d translation;  Eigen::Matrix3d M;  double angle = 45.</description>
+    </item>
+    
     <item>
       <title>坐摩天轮</title>
       <link>https://jiuyuezai.github.io/2019/02/%E5%9D%90%E6%91%A9%E5%A4%A9%E8%BD%AE/</link>
