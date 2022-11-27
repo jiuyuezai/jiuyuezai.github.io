@@ -6,7 +6,24 @@
     <description>Recent content on Wong Der Land</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 21 Nov 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://jiuyuezai.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 27 Nov 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://jiuyuezai.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>GAMES101作业本——作业2：Triangles and Z-buffering</title>
+      <link>https://jiuyuezai.github.io/2022/11/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A2triangles-and-z-buffering/</link>
+      <pubDate>Sun, 27 Nov 2022 00:00:00 +0000</pubDate>
+      
+      <guid>https://jiuyuezai.github.io/2022/11/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A2triangles-and-z-buffering/</guid>
+      <description>作业描述 上一次作业在视口变化之后调用了函数 rasterize_wireframe(const Triangle&amp;amp; t)。这一次需要自己填写并调用函数 rasterize_triangle(const Triangle&amp;amp; t)。
+该函数的内部工作流程如下：
+ 创建三角形的 2 维 bounding box。 遍历此 bounding box 内的所有像素（使用其整数索引）。然后，使用像素中心的屏幕空间坐标来检查中心点是否在三角形内。 如果在内部，则将其位置处的插值深度值 (interpolated depth value) 与深度缓冲区 (depth buffer) 中的相应值进行比较。 如果当前点更靠近相机，请设置像素颜色并更新深度缓冲区 (depth buffer)。  需要修改的函数如下：
+ rasterize_triangle(): 执行三角形栅格化算法 static bool insideTriangle(): 测试点是否在三角形内。可以修改此函数的定义，这意味着可以按照自己的方式更新返回类型或函数参数。  此外：
+ 要求正确实现z-buffer算法，将三角形按顺序画在屏幕上。  附加题：
+ 用 super-sampling 处理 Anti-aliasing : 对每个像素进行 2 * 2 采样，并比较前后的结果 (这里并不需要考虑像素与像素间的样本复用)。需要注意的点有，对于像素内的每一个样本都需要维护它自己的深度值，即每一个像素都需要维护一个sample list。最后，如果实现正确的话，得到的三角形不应该有不正常的黑边。  解题思路   创建三角形的最小包围盒：直接比较坐标，找出四个顶点取整。
+  遍历盒内像素判断是否在三角形内：链接目标点与三角形顶点，使用叉积结果符号判断。
+  处于三角形内部的像素差值深度值与缓冲区相应值比较，用较小值（距离摄像机近）替换。
+  设置像素颜色。</description>
+    </item>
+    
     <item>
       <title>GAMES101作业本——作业1：旋转与投影</title>
       <link>https://jiuyuezai.github.io/2022/11/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A1%E6%97%8B%E8%BD%AC%E4%B8%8E%E6%8A%95%E5%BD%B1/</link>
