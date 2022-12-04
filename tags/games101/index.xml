@@ -6,7 +6,18 @@
     <description>Recent content in GAMES101 on Wong Der Land</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 27 Nov 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://jiuyuezai.github.io/tags/games101/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 04 Dec 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://jiuyuezai.github.io/tags/games101/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>GAMES101作业本——作业3：Pipeline and Shading</title>
+      <link>https://jiuyuezai.github.io/2022/12/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A3pipeline-and-shading/</link>
+      <pubDate>Sun, 04 Dec 2022 00:00:00 +0000</pubDate>
+      
+      <guid>https://jiuyuezai.github.io/2022/12/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A3pipeline-and-shading/</guid>
+      <description>作业描述 本次需要完成的任务是:
+ 修改函数 rasterize_triangle(const Triangle&amp;amp; t) in rasterizer.cpp: 在此处实现与作业 2 类似的插值算法，实现法向量、颜色、纹理颜色的插值。 修改函数 get_projection_matrix() in main.cpp: 将之前的实验中实现的投影矩阵填到此处，此时可以运行 ./Rasterizer output.png normal 来观察法向量实现结果。 修改函数 phong_fragment_shader() in main.cpp: 实现 Blinn-Phong 模型计算 Fragment Color. 修改函数 texture_fragment_shader() in main.cpp: 在实现 Blinn-Phong 的基础上，将纹理颜色视为公式中的 kd，实现 Texture Shading Fragment Shader. 修改函数 bump_fragment_shader() in main.cpp: 在实现 Blinn-Phong 的 基础上，仔细阅读该函数中的注释，实现 Bump mapping. 修改函数 displacement_fragment_shader() in main.cpp: 在实现 Bump mapping 的基础上，实现 displacement mapping.  附加题：
+ 尝试更多模型: 找到其他可用的.obj 文件，提交渲染结果并把模型保存在 /models 目录下。这些模型也应该包含 Vertex Normal 信息。 双线性纹理插值: 使用双线性插值进行纹理采样, 在 Texture 类中实现一个新方法 Vector3f getColorBilinear(float u, float v) 并 通过 fragment shader 调用它。为了使双线性插值的效果更加明显，应该考虑选择更小的纹理图。请同时提交纹理插值与双线性纹理插值的结果，并进行比较。  FAQ http://games-cn.</description>
+    </item>
+    
     <item>
       <title>GAMES101作业本——作业2：Triangles and Z-buffering</title>
       <link>https://jiuyuezai.github.io/2022/11/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A2triangles-and-z-buffering/</link>

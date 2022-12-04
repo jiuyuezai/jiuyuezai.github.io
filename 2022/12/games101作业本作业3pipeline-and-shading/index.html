@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="Hugo 0.94.2" />
+
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="Sylvia Wong" />
+  <meta property="og:url" content="https://jiuyuezai.github.io/2022/12/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A3pipeline-and-shading/" />
+  <link rel="canonical" href="https://jiuyuezai.github.io/2022/12/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A3pipeline-and-shading/" /><link rel="apple-touch-icon" href="/icon.png" />
+  <link rel="icon" href="/icon.png" />
+  <link rel="shortcut" href="/icon.png" /><link rel="alternate" type="application/atom+xml" href="https://jiuyuezai.github.io/index.xml" title="Wong Der Land">
+
+  <script type="application/ld+json">
+  {
+      "@context" : "http://schema.org",
+      "@type" : "BlogPosting",
+      "mainEntityOfPage": {
+           "@type": "WebPage",
+           "@id": "https:\/\/jiuyuezai.github.io\/"
+      },
+      "articleSection" : "posts",
+      "name" : "GAMES101作业本——作业3：Pipeline and Shading",
+      "headline" : "GAMES101作业本——作业3：Pipeline and Shading",
+      "description" : "作业描述 本次需要完成的任务是:\n 修改函数 rasterize_triangle(const Triangle\u0026amp; t) in rasterizer.cpp: 在此处实现与作业 2 类似的插值算法，实现法向量、颜色、纹理颜色的插值。 修改函数 get_projection_matrix() in main.cpp: 将之前的实验中实现的投影矩阵填到此处，此时可以运行 .\/Rasterizer output.png normal 来观察法向量实现结果。 修改函数 phong_fragment_shader() in main.cpp: 实现 Blinn-Phong 模型计算 Fragment Color. 修改函数 texture_fragment_shader() in main.cpp: 在实现 Blinn-Phong 的基础上，将纹理颜色视为公式中的 kd，实现 Texture Shading Fragment Shader. 修改函数 bump_fragment_shader() in main.cpp: 在实现 Blinn-Phong 的 基础上，仔细阅读该函数中的注释，实现 Bump mapping. 修改函数 displacement_fragment_shader() in main.cpp: 在实现 Bump mapping 的基础上，实现 displacement mapping.  附加题：\n 尝试更多模型: 找到其他可用的.obj 文件，提交渲染结果并把模型保存在 \/models 目录下。这些模型也应该包含 Vertex Normal 信息。 双线性纹理插值: 使用双线性插值进行纹理采样, 在 Texture 类中实现一个新方法 Vector3f getColorBilinear(float u, float v) 并 通过 fragment shader 调用它。为了使双线性插值的效果更加明显，应该考虑选择更小的纹理图。请同时提交纹理插值与双线性纹理插值的结果，并进行比较。  FAQ http:\/\/games-cn.",
+      "inLanguage" : "en-US",
+      "author" : "Sylvia Wong",
+      "creator" : "Sylvia Wong",
+      "publisher": "Sylvia Wong",
+      "accountablePerson" : "Sylvia Wong",
+      "copyrightHolder" : "Sylvia Wong",
+      "copyrightYear" : "2022",
+      "datePublished": "2022-12-04 00:00:00 \u002b0000 UTC",
+      "dateModified" : "2022-12-04 00:00:00 \u002b0000 UTC",
+      "url" : "https:\/\/jiuyuezai.github.io\/2022\/12\/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A3pipeline-and-shading\/",
+      "keywords" : [ "技术杂谈","GAMES101", ]
+  }
+</script>
+<title>GAMES101作业本——作业3：Pipeline and Shading</title>
+  <meta property="og:title" content="GAMES101作业本——作业3：Pipeline and Shading" />
+  <meta property="og:type" content="article" />
+  <meta property="og:description" content="作业描述 本次需要完成的任务是:
+ 修改函数 rasterize_triangle(const Triangle&amp;amp; t) in rasterizer.cpp: 在此处实现与作业 2 类似的插值算法，实现法向量、颜色、纹理颜色的插值。 修改函数 get_projection_matrix() in main.cpp: 将之前的实验中实现的投影矩阵填到此处，此时可以运行 ./Rasterizer output.png normal 来观察法向量实现结果。 修改函数 phong_fragment_shader() in main.cpp: 实现 Blinn-Phong 模型计算 Fragment Color. 修改函数 texture_fragment_shader() in main.cpp: 在实现 Blinn-Phong 的基础上，将纹理颜色视为公式中的 kd，实现 Texture Shading Fragment Shader. 修改函数 bump_fragment_shader() in main.cpp: 在实现 Blinn-Phong 的 基础上，仔细阅读该函数中的注释，实现 Bump mapping. 修改函数 displacement_fragment_shader() in main.cpp: 在实现 Bump mapping 的基础上，实现 displacement mapping.  附加题：
+ 尝试更多模型: 找到其他可用的.obj 文件，提交渲染结果并把模型保存在 /models 目录下。这些模型也应该包含 Vertex Normal 信息。 双线性纹理插值: 使用双线性插值进行纹理采样, 在 Texture 类中实现一个新方法 Vector3f getColorBilinear(float u, float v) 并 通过 fragment shader 调用它。为了使双线性插值的效果更加明显，应该考虑选择更小的纹理图。请同时提交纹理插值与双线性纹理插值的结果，并进行比较。  FAQ http://games-cn." />
+  <meta name="description" content="作业描述 本次需要完成的任务是:
+ 修改函数 rasterize_triangle(const Triangle&amp;amp; t) in rasterizer.cpp: 在此处实现与作业 2 类似的插值算法，实现法向量、颜色、纹理颜色的插值。 修改函数 get_projection_matrix() in main.cpp: 将之前的实验中实现的投影矩阵填到此处，此时可以运行 ./Rasterizer output.png normal 来观察法向量实现结果。 修改函数 phong_fragment_shader() in main.cpp: 实现 Blinn-Phong 模型计算 Fragment Color. 修改函数 texture_fragment_shader() in main.cpp: 在实现 Blinn-Phong 的基础上，将纹理颜色视为公式中的 kd，实现 Texture Shading Fragment Shader. 修改函数 bump_fragment_shader() in main.cpp: 在实现 Blinn-Phong 的 基础上，仔细阅读该函数中的注释，实现 Bump mapping. 修改函数 displacement_fragment_shader() in main.cpp: 在实现 Bump mapping 的基础上，实现 displacement mapping.  附加题：
+ 尝试更多模型: 找到其他可用的.obj 文件，提交渲染结果并把模型保存在 /models 目录下。这些模型也应该包含 Vertex Normal 信息。 双线性纹理插值: 使用双线性插值进行纹理采样, 在 Texture 类中实现一个新方法 Vector3f getColorBilinear(float u, float v) 并 通过 fragment shader 调用它。为了使双线性插值的效果更加明显，应该考虑选择更小的纹理图。请同时提交纹理插值与双线性纹理插值的结果，并进行比较。  FAQ http://games-cn." />
+  <meta property="og:locale" content="en-us" /><meta property="og:image" content="/icon.png" />
+  
+
+  
+    <style>body{font-family:bree serif,sans-serif;-webkit-font-smoothing:antialiased;margin:0 20px}article{max-width:800px;margin-left:auto;margin-right:auto}a{color:#000;text-decoration:none}a:hover{font-weight:600;text-decoration:underline}.post-ads{margin:50px 0}.markdown-body{font-size:18px;max-width:100%}.markdown-body a{text-decoration:underline;text-decoration-color:#000}.markdown-body blockquote{margin:0;padding:0 1em;color:#57606a;border-left:.25em solid #d0d7de}.markdown-body pre{padding:16px;overflow:auto;border-radius:10px}.markdown-body code{padding:.2em .4em;font-size:85%;background-color:#f6f8fa;border-radius:6px}.markdown-body pre>code{padding:0;font-size:100%;background-color:inherit;border:0}.Chinese .markdown-body{line-height:200%}.site-date-catalog{font-size:2rem}.header-title{font-size:2rem;font-weight:700;margin-top:32px;font-family:bungee shade,sans-serif}.header-title a{text-decoration:none}.header-subtitle{color:#666}.header-items{margin:10px 0}.header-item{margin:0 5px}.header-line{width:100%;border-width:2px;border-color:#482936;border-style:solid none none none}.lang-switch{font-weight:600}#posts-list{min-height:600px}.posts-line{font-size:1.2rem;margin:12px 0}.posts-categories{font-size:.8rem;margin:auto;text-align:center}.posts-category{padding:3px 0;border:#000 2px solid;border-radius:5px}.site-footer{margin-top:50px;margin-bottom:50px;display:flex;justify-content:flex-end;flex-wrap:wrap;padding:12px 0;border-width:3px;border-style:dashed none none none;border-color:#000}.site-footer-item{margin-right:12px}.post-content img{display:block;margin:1rem auto;max-width:100%;margin-top:12px}.post-header{margin-bottom:50px}.post-title{font-size:2rem;font-weight:600}.post-tags{display:inline;font-weight:600;padding:2px 5px;margin-right:6px;border:#000 2px solid;border-radius:5px}.post-date{font-weight:800;font-style:italic}.post-author{float:right;font-weight:600}.page-content{min-height:60%}.post-content{margin-bottom:50px}.post-content p{hyphens:auto;line-height:1.8;text-justify:ideographic;margin-bottom:1em}.related-content{border-width:3px;border-style:solid;border-color:#000;padding:0 10px;margin-bottom:50px;margin-top:100px}.related-content li{margin:5px 0}.taxonomy-term{font-size:3rem}.gallery-img{text-align:center}.gallery-img span{text-align:center}.gallery-img-desc{font-size:.8em;font-weight:800}#disqus_thread{position:relative}#disqus_thread:after{content:"";display:block;height:55px;width:100%;position:absolute;bottom:0;background:#fff}@media screen and (max-width:600px){.header-title,.header-subtitle,.header-items{text-align:center}.posts-line{font-size:16px}.markdown-body{font-size:16px}.post-title{font-size:2rem}.post-content p{letter-spacing:.05em}}@media screen and (max-width:48em){.posts-category{display:none}}</style>
+  
+  
+    <style>.container,.container-fluid{margin-right:auto;margin-left:auto}.container-fluid{padding-right:2rem;padding-left:2rem}.row{box-sizing:border-box;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-flex:0;-ms-flex:0 1 auto;flex:initial;-webkit-box-orient:horizontal;-webkit-box-direction:normal;-ms-flex-direction:row;flex-direction:row;-ms-flex-wrap:wrap;flex-wrap:wrap;margin-right:-.5rem;margin-left:-.5rem}.row.reverse{-webkit-box-orient:horizontal;-webkit-box-direction:reverse;-ms-flex-direction:row-reverse;flex-direction:row-reverse}.col.reverse{-webkit-box-orient:vertical;-webkit-box-direction:reverse;-ms-flex-direction:column-reverse;flex-direction:column-reverse}.col-xs,.col-xs-1,.col-xs-10,.col-xs-11,.col-xs-12,.col-xs-2,.col-xs-3,.col-xs-4,.col-xs-5,.col-xs-6,.col-xs-7,.col-xs-8,.col-xs-9,.col-xs-offset-0,.col-xs-offset-1,.col-xs-offset-10,.col-xs-offset-11,.col-xs-offset-12,.col-xs-offset-2,.col-xs-offset-3,.col-xs-offset-4,.col-xs-offset-5,.col-xs-offset-6,.col-xs-offset-7,.col-xs-offset-8,.col-xs-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-xs{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-xs-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-xs-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-xs-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-xs-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-xs-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-xs-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-xs-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-xs-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-xs-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-xs-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-xs-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-xs-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-xs-offset-0{margin-left:0}.col-xs-offset-1{margin-left:8.33333333%}.col-xs-offset-2{margin-left:16.66666667%}.col-xs-offset-3{margin-left:25%}.col-xs-offset-4{margin-left:33.33333333%}.col-xs-offset-5{margin-left:41.66666667%}.col-xs-offset-6{margin-left:50%}.col-xs-offset-7{margin-left:58.33333333%}.col-xs-offset-8{margin-left:66.66666667%}.col-xs-offset-9{margin-left:75%}.col-xs-offset-10{margin-left:83.33333333%}.col-xs-offset-11{margin-left:91.66666667%}.start-xs{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-xs{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-xs{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-xs{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-xs{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-xs{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-xs{-ms-flex-pack:distribute;justify-content:space-around}.between-xs{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-xs{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-xs{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}@media only screen and (min-width:48em){.container{width:49rem}.col-sm,.col-sm-1,.col-sm-10,.col-sm-11,.col-sm-12,.col-sm-2,.col-sm-3,.col-sm-4,.col-sm-5,.col-sm-6,.col-sm-7,.col-sm-8,.col-sm-9,.col-sm-offset-0,.col-sm-offset-1,.col-sm-offset-10,.col-sm-offset-11,.col-sm-offset-12,.col-sm-offset-2,.col-sm-offset-3,.col-sm-offset-4,.col-sm-offset-5,.col-sm-offset-6,.col-sm-offset-7,.col-sm-offset-8,.col-sm-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-sm{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-sm-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-sm-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-sm-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-sm-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-sm-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-sm-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-sm-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-sm-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-sm-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-sm-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-sm-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-sm-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-sm-offset-0{margin-left:0}.col-sm-offset-1{margin-left:8.33333333%}.col-sm-offset-2{margin-left:16.66666667%}.col-sm-offset-3{margin-left:25%}.col-sm-offset-4{margin-left:33.33333333%}.col-sm-offset-5{margin-left:41.66666667%}.col-sm-offset-6{margin-left:50%}.col-sm-offset-7{margin-left:58.33333333%}.col-sm-offset-8{margin-left:66.66666667%}.col-sm-offset-9{margin-left:75%}.col-sm-offset-10{margin-left:83.33333333%}.col-sm-offset-11{margin-left:91.66666667%}.start-sm{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-sm{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-sm{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-sm{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-sm{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-sm{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-sm{-ms-flex-pack:distribute;justify-content:space-around}.between-sm{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-sm{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-sm{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}}@media only screen and (min-width:64em){.container{width:65rem}.col-md,.col-md-1,.col-md-10,.col-md-11,.col-md-12,.col-md-2,.col-md-3,.col-md-4,.col-md-5,.col-md-6,.col-md-7,.col-md-8,.col-md-9,.col-md-offset-0,.col-md-offset-1,.col-md-offset-10,.col-md-offset-11,.col-md-offset-12,.col-md-offset-2,.col-md-offset-3,.col-md-offset-4,.col-md-offset-5,.col-md-offset-6,.col-md-offset-7,.col-md-offset-8,.col-md-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-md{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-md-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-md-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-md-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-md-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-md-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-md-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-md-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-md-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-md-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-md-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-md-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-md-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-md-offset-0{margin-left:0}.col-md-offset-1{margin-left:8.33333333%}.col-md-offset-2{margin-left:16.66666667%}.col-md-offset-3{margin-left:25%}.col-md-offset-4{margin-left:33.33333333%}.col-md-offset-5{margin-left:41.66666667%}.col-md-offset-6{margin-left:50%}.col-md-offset-7{margin-left:58.33333333%}.col-md-offset-8{margin-left:66.66666667%}.col-md-offset-9{margin-left:75%}.col-md-offset-10{margin-left:83.33333333%}.col-md-offset-11{margin-left:91.66666667%}.start-md{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-md{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-md{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-md{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-md{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-md{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-md{-ms-flex-pack:distribute;justify-content:space-around}.between-md{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-md{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-md{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}}@media only screen and (min-width:75em){.container{width:76rem}.col-lg,.col-lg-1,.col-lg-10,.col-lg-11,.col-lg-12,.col-lg-2,.col-lg-3,.col-lg-4,.col-lg-5,.col-lg-6,.col-lg-7,.col-lg-8,.col-lg-9,.col-lg-offset-0,.col-lg-offset-1,.col-lg-offset-10,.col-lg-offset-11,.col-lg-offset-12,.col-lg-offset-2,.col-lg-offset-3,.col-lg-offset-4,.col-lg-offset-5,.col-lg-offset-6,.col-lg-offset-7,.col-lg-offset-8,.col-lg-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-lg{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-lg-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-lg-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-lg-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-lg-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-lg-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-lg-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-lg-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-lg-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-lg-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-lg-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-lg-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-lg-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-lg-offset-0{margin-left:0}.col-lg-offset-1{margin-left:8.33333333%}.col-lg-offset-2{margin-left:16.66666667%}.col-lg-offset-3{margin-left:25%}.col-lg-offset-4{margin-left:33.33333333%}.col-lg-offset-5{margin-left:41.66666667%}.col-lg-offset-6{margin-left:50%}.col-lg-offset-7{margin-left:58.33333333%}.col-lg-offset-8{margin-left:66.66666667%}.col-lg-offset-9{margin-left:75%}.col-lg-offset-10{margin-left:83.33333333%}.col-lg-offset-11{margin-left:91.66666667%}.start-lg{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-lg{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-lg{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-lg{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-lg{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-lg{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-lg{-ms-flex-pack:distribute;justify-content:space-around}.between-lg{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-lg{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-lg{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}}</style>
+  
+
+  
+
+  <link href="/index.xml" rel="alternate" type="application/rss+xml"
+    title="Wong Der Land">
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css?family=Bree+Serif|Bungee+Shade" rel="stylesheet">
+  
+  
+  
+
+  
+  
+</head>
+
+
+<body>
+    <article class="post " id="article">
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="site-header">
+                    
+<header>
+  <div class="header-title">
+    <a href="/"
+      >Wong Der Land</a
+    >
+  </div>
+  <div class="header-subtitle">READ ONLY</div>
+</header>
+<div class="row end-md center-xs header-items">
+  
+  <div class="header-item">
+    <a href="/categories/life" target="_blank">Life</a>
+  </div>
+  
+  <div class="header-item">
+    <a href="/categories/game" target="_blank">Game</a>
+  </div>
+  
+  <div class="header-item">
+    <a href="/categories/art" target="_blank">Art</a>
+  </div>
+  
+  <div class="header-item">
+    <a href="/categories/drama" target="_blank">Drama</a>
+  </div>
+  
+  <div class="header-item">
+    <a href="/categories/tech" target="_blank">Tech</a>
+  </div>
+  
+</div>
+<div class="row end-xs">
+   
+</div>
+<div class="header-line"></div>
+
+                </div>
+                <header class="post-header">
+                    <h1 class="post-title">GAMES101作业本——作业3：Pipeline and Shading</h1>
+                    
+                    <div class="row post-desc">
+                        <div class="col-xs-6">
+                            
+                            <time class="post-date" datetime=" 2022-12-04 00:00:00 UTC">
+                                04 Dec 2022
+                            </time>
+                            
+                        </div>
+                        <div class="col-xs-6">
+                            
+                            <div class="post-author">
+                                
+                                
+                                
+                                Sylvia Wong
+                            </div>
+                            
+                        </div>
+                    </div>
+                    
+                </header>
+
+                <div class="post-content markdown-body">
+                    
+                    <h2 id="作业描述">作业描述</h2>
+<p>本次需要完成的任务是:</p>
+<ol>
+<li>修改函数 rasterize_triangle(const Triangle&amp; t) in rasterizer.cpp: 在此处实现与作业 2 类似的插值算法，实现法向量、颜色、纹理颜色的插值。</li>
+<li>修改函数 get_projection_matrix() in main.cpp: 将之前的实验中实现的投影矩阵填到此处，此时可以运行 ./Rasterizer output.png normal 来观察法向量实现结果。</li>
+<li>修改函数 phong_fragment_shader() in main.cpp: 实现 Blinn-Phong 模型计算 Fragment Color.</li>
+<li>修改函数 texture_fragment_shader() in main.cpp: 在实现 Blinn-Phong 的基础上，将纹理颜色视为公式中的 kd，实现 Texture Shading Fragment Shader.</li>
+<li>修改函数 bump_fragment_shader() in main.cpp: 在实现 Blinn-Phong 的 基础上，仔细阅读该函数中的注释，实现 Bump mapping.</li>
+<li>修改函数 displacement_fragment_shader() in main.cpp: 在实现 Bump mapping 的基础上，实现 displacement mapping.</li>
+</ol>
+<p>附加题：</p>
+<ul>
+<li>尝试更多模型: 找到其他可用的.obj 文件，提交渲染结果并把模型保存在 /models 目录下。这些模型也应该包含 Vertex Normal 信息。</li>
+<li>双线性纹理插值: 使用双线性插值进行纹理采样, 在 Texture 类中实现一个新方法 Vector3f getColorBilinear(float u, float v) 并 通过 fragment shader 调用它。为了使双线性插值的效果更加明显，应该考虑选择更小的纹理图。请同时提交纹理插值与双线性纹理插值的结果，并进行比较。</li>
+</ul>
+<h2 id="faq">FAQ</h2>
+<p><a href="http://games-cn.org/forums/topic/frequently-asked-questionskeep-updating/">http://games-cn.org/forums/topic/frequently-asked-questionskeep-updating/</a></p>
+<ol>
+<li>bump mapping 部分的 h(u,v)=texture_color(u,v).norm, 其中 u,v 是 tex_coords, w,h 是 texture 的宽度与高度</li>
+<li>rasterizer.cpp 中 v = t.toVector4()</li>
+<li>get_projection_matrix 中的 eye_fov 应该被转化为弧度制</li>
+<li>bump 与 displacement 中修改后的 normal 仍需要 normalize</li>
+<li>可能用到的 eigen 方法：norm(), normalized(), cwiseProduct()</li>
+<li>实现 h(u+1/w,v) 的时候要写成 h(u+1.0/w,v)</li>
+</ol>
+<h2 id="解题思路">解题思路</h2>
+<h3 id="1-实现法向量颜色纹理颜色的插值">1. 实现法向量、颜色、纹理颜色的插值</h3>
+<p>基本流程和作业2差不多，因为投影可能改表三角形的重心坐标，需要做一个透视矫正。按照 Barycentric Coordinates 对法向量、颜色、纹理颜色与底纹颜色 (Shading Colors) 进行插值，将它们传递给fragment_shader_payload，调用 fragment shader（片元着色器） 得到计算出的颜色写入 framebuffer。</p>
+<p><img src="/img/games101_hw_3/1.png" alt="重心坐标的计算" title="重心坐标的计算"></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-c++" data-lang="c++"><span style="display:flex;"><span><span style="color:#6272a4">//Screen space rasterization
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span><span style="color:#8be9fd">void</span> rst<span style="color:#ff79c6">::</span>rasterizer<span style="color:#ff79c6">::</span>rasterize_triangle(<span style="color:#ff79c6">const</span> Triangle<span style="color:#ff79c6">&amp;</span> t, <span style="color:#ff79c6">const</span> std<span style="color:#ff79c6">::</span>array<span style="color:#ff79c6">&lt;</span>Eigen<span style="color:#ff79c6">::</span>Vector3f, <span style="color:#bd93f9">3</span><span style="color:#ff79c6">&gt;&amp;</span> view_pos) {
+</span></span><span style="display:flex;"><span>    <span style="color:#6272a4">// DONE: From your HW3, get the triangle rasterization code.
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">auto</span> v <span style="color:#ff79c6">=</span> t.toVector4();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#6272a4">// Find out the bounding box of current triangle.
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#8be9fd">float</span> x_min <span style="color:#ff79c6">=</span> std<span style="color:#ff79c6">::</span>min(v[<span style="color:#bd93f9">0</span>][<span style="color:#bd93f9">0</span>], std<span style="color:#ff79c6">::</span>min(v[<span style="color:#bd93f9">1</span>][<span style="color:#bd93f9">0</span>], v[<span style="color:#bd93f9">2</span>][<span style="color:#bd93f9">0</span>]));
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> x_max <span style="color:#ff79c6">=</span> std<span style="color:#ff79c6">::</span>max(v[<span style="color:#bd93f9">0</span>][<span style="color:#bd93f9">0</span>], std<span style="color:#ff79c6">::</span>max(v[<span style="color:#bd93f9">1</span>][<span style="color:#bd93f9">0</span>], v[<span style="color:#bd93f9">2</span>][<span style="color:#bd93f9">0</span>]));
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> y_min <span style="color:#ff79c6">=</span> std<span style="color:#ff79c6">::</span>min(v[<span style="color:#bd93f9">0</span>][<span style="color:#bd93f9">1</span>], std<span style="color:#ff79c6">::</span>min(v[<span style="color:#bd93f9">1</span>][<span style="color:#bd93f9">1</span>], v[<span style="color:#bd93f9">2</span>][<span style="color:#bd93f9">1</span>]));
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> y_max <span style="color:#ff79c6">=</span> std<span style="color:#ff79c6">::</span>max(v[<span style="color:#bd93f9">0</span>][<span style="color:#bd93f9">1</span>], std<span style="color:#ff79c6">::</span>max(v[<span style="color:#bd93f9">1</span>][<span style="color:#bd93f9">1</span>], v[<span style="color:#bd93f9">2</span>][<span style="color:#bd93f9">1</span>]));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#6272a4">// 取整，保证三角形在包围盒内
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#8be9fd">int</span> left <span style="color:#ff79c6">=</span> std<span style="color:#ff79c6">::</span>floor(x_min);
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">int</span> right <span style="color:#ff79c6">=</span> std<span style="color:#ff79c6">::</span>ceil(x_max);
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">int</span> bottom <span style="color:#ff79c6">=</span> std<span style="color:#ff79c6">::</span>floor(y_min);
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">int</span> top <span style="color:#ff79c6">=</span> std<span style="color:#ff79c6">::</span>ceil(y_max);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#6272a4">// iterate through the pixel and find if the current pixel is inside the triangle 
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#ff79c6">for</span> (<span style="color:#8be9fd">int</span> x <span style="color:#ff79c6">=</span> left; x <span style="color:#ff79c6">&lt;=</span> right; <span style="color:#ff79c6">++</span>x) {
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">for</span> (<span style="color:#8be9fd">int</span> y <span style="color:#ff79c6">=</span> bottom; y <span style="color:#ff79c6">&lt;=</span> top;<span style="color:#ff79c6">++</span>y) {
+</span></span><span style="display:flex;"><span>            <span style="color:#ff79c6">if</span> (insideTriangle(x, y, t.v)) {
+</span></span><span style="display:flex;"><span>                <span style="color:#6272a4">// DONE: Inside your rasterization loop:
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>                <span style="color:#6272a4">// 获取重心坐标分量
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>                <span style="color:#ff79c6">auto</span> [alpha, beta, gamma] <span style="color:#ff79c6">=</span> computeBarycentric2D(x, y, t.v);
+</span></span><span style="display:flex;"><span>                <span style="color:#6272a4">// 投影时三角形重心会变，所以要使用透视校正插值
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>                <span style="color:#6272a4">//    * v[i].w() is the vertex view space depth value z.
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>                <span style="color:#6272a4">//    * Z is interpolated view space depth for the current pixel
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>                <span style="color:#8be9fd">float</span> Z <span style="color:#ff79c6">=</span> <span style="color:#bd93f9">1.0</span> <span style="color:#ff79c6">/</span> (alpha <span style="color:#ff79c6">/</span> v[<span style="color:#bd93f9">0</span>].w() <span style="color:#ff79c6">+</span> beta <span style="color:#ff79c6">/</span> v[<span style="color:#bd93f9">1</span>].w() <span style="color:#ff79c6">+</span> gamma <span style="color:#ff79c6">/</span> v[<span style="color:#bd93f9">2</span>].w());
+</span></span><span style="display:flex;"><span>                <span style="color:#6272a4">//    * zp is depth between zNear and zFar, used for z-buffer 
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>                <span style="color:#8be9fd">float</span> zp <span style="color:#ff79c6">=</span> alpha <span style="color:#ff79c6">*</span> v[<span style="color:#bd93f9">0</span>].z() <span style="color:#ff79c6">/</span> v[<span style="color:#bd93f9">0</span>].w() <span style="color:#ff79c6">+</span> beta <span style="color:#ff79c6">*</span> v[<span style="color:#bd93f9">1</span>].z() <span style="color:#ff79c6">/</span> v[<span style="color:#bd93f9">1</span>].w() <span style="color:#ff79c6">+</span> gamma <span style="color:#ff79c6">*</span> v[<span style="color:#bd93f9">2</span>].z() <span style="color:#ff79c6">/</span> v[<span style="color:#bd93f9">2</span>].w();
+</span></span><span style="display:flex;"><span>                zp <span style="color:#ff79c6">*=</span> Z;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                <span style="color:#ff79c6">if</span> (zp <span style="color:#ff79c6">&lt;</span> depth_buf[get_index(x, y)]) {
+</span></span><span style="display:flex;"><span>                    <span style="color:#6272a4">// DONE: Interpolate the attributes:
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>                    <span style="color:#6272a4">// auto interpolated_color 对颜色进行线性插值
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>                    <span style="color:#ff79c6">auto</span> interpolated_color <span style="color:#ff79c6">=</span> interpolate(alpha, beta, gamma, t.color[<span style="color:#bd93f9">0</span>], t.color[<span style="color:#bd93f9">1</span>], t.color[<span style="color:#bd93f9">2</span>], <span style="color:#bd93f9">1.0</span>);
+</span></span><span style="display:flex;"><span>                    <span style="color:#6272a4">// auto interpolated_normal 对法向量进行线性插值
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>                    <span style="color:#ff79c6">auto</span> interpolated_normal <span style="color:#ff79c6">=</span> interpolate(alpha, beta, gamma, t.normal[<span style="color:#bd93f9">0</span>], t.normal[<span style="color:#bd93f9">1</span>], t.normal[<span style="color:#bd93f9">2</span>], <span style="color:#bd93f9">1.0</span>);
+</span></span><span style="display:flex;"><span>                    <span style="color:#6272a4">// auto interpolated_texcoords 对纹理坐标uv进行线性插值
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>                    <span style="color:#ff79c6">auto</span> interpolated_texcoords <span style="color:#ff79c6">=</span> interpolate(alpha, beta, gamma, t.tex_coords[<span style="color:#bd93f9">0</span>], t.tex_coords[<span style="color:#bd93f9">1</span>], t.tex_coords[<span style="color:#bd93f9">2</span>], <span style="color:#bd93f9">1.0</span>);
+</span></span><span style="display:flex;"><span>                    <span style="color:#6272a4">// auto interpolated_shadingcoords 视图空间坐标进行线性插值
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>                    <span style="color:#6272a4">//view_pos[]是三角形顶点在view space中的坐标,插值是为了还原在camera space中的坐标，详见http://games-cn.org/forums/topic/zuoye3-interpolated_shadingcoords/
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>                    <span style="color:#ff79c6">auto</span> interpolated_shadingcoords <span style="color:#ff79c6">=</span> interpolate(alpha, beta, gamma, view_pos[<span style="color:#bd93f9">0</span>], view_pos[<span style="color:#bd93f9">1</span>], view_pos[<span style="color:#bd93f9">2</span>], <span style="color:#bd93f9">1.0</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                    fragment_shader_payload <span style="color:#50fa7b">payload</span>(interpolated_color, interpolated_normal.normalized(), interpolated_texcoords, texture <span style="color:#ff79c6">?</span> <span style="color:#ff79c6">&amp;*</span><span style="color:#8be9fd;font-style:italic">texture</span> : <span style="color:#ff79c6">nullptr</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                    payload.view_pos <span style="color:#ff79c6">=</span> interpolated_shadingcoords;
+</span></span><span style="display:flex;"><span>                    <span style="color:#6272a4">// Use: Instead of passing the triangle&#39;s color directly to the frame buffer, pass the color to the shaders first to get the final color;
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>                    <span style="color:#ff79c6">auto</span> pixel_color <span style="color:#ff79c6">=</span> fragment_shader(payload);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                    depth_buf[get_index(x, y)] <span style="color:#ff79c6">=</span> zp;
+</span></span><span style="display:flex;"><span>                    set_pixel(Eigen<span style="color:#ff79c6">::</span>Vector2i(x, y), pixel_color);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="2-修改投影矩阵">2. 修改投影矩阵</h3>
+<p>因为作业框架与老师授课所用的坐标系不一样（左手系和右手系的差别），在之前的作业里为了避免图形上下颠倒人为把Z轴方向反转，直接使用作业2的投影矩阵输出结果发现渲染有坏点。</p>
+<p><img src="/img/games101_hw_3/3.png" alt="渲染有坏点" title="渲染有坏点"></p>
+<p>将两个变换矩阵合并为一个的情况下图像显示正常，推测坏点是浮点数运算导致的，计算出投影矩阵以后需要使用旋转矩阵将图形逆时针旋转180度。</p>
+<p><img src="/img/games101_hw_3/4.png" alt="渲染无坏点" title="渲染无坏点"></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-c++" data-lang="c++"><span style="display:flex;"><span>Eigen<span style="color:#ff79c6">::</span>Matrix4f get_projection_matrix(<span style="color:#8be9fd">float</span> eye_fov, <span style="color:#8be9fd">float</span> aspect_ratio,
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> zNear, <span style="color:#8be9fd">float</span> zFar) {
+</span></span><span style="display:flex;"><span>    <span style="color:#6272a4">// Students will implement this function
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    Eigen<span style="color:#ff79c6">::</span>Matrix4f projection <span style="color:#ff79c6">=</span> Eigen<span style="color:#ff79c6">::</span>Matrix4f<span style="color:#ff79c6">::</span>Identity();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#6272a4">// DONE: Implement this function
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#6272a4">// Create the projection matrix for the given parameters.
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#6272a4">// Then return it.
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#8be9fd">float</span> n <span style="color:#ff79c6">=</span> <span style="color:#ff79c6">-</span>zNear; <span style="color:#6272a4">// Z轴反向
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#8be9fd">float</span> f <span style="color:#ff79c6">=</span> <span style="color:#ff79c6">-</span>zFar; <span style="color:#6272a4">// Z轴反向
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#8be9fd">float</span> t <span style="color:#ff79c6">=</span> std<span style="color:#ff79c6">::</span>tan(eye_fov <span style="color:#ff79c6">/</span> <span style="color:#bd93f9">180</span> <span style="color:#ff79c6">*</span> MY_PI <span style="color:#ff79c6">/</span> <span style="color:#bd93f9">2</span>) <span style="color:#ff79c6">*</span> std<span style="color:#ff79c6">::</span>abs(n);
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> r <span style="color:#ff79c6">=</span> aspect_ratio <span style="color:#ff79c6">*</span> t;
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> b <span style="color:#ff79c6">=</span> <span style="color:#ff79c6">-</span>t;
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> l <span style="color:#ff79c6">=</span> <span style="color:#ff79c6">-</span>r;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Matrix4f temp;
+</span></span><span style="display:flex;"><span>    temp <span style="color:#ff79c6">&lt;&lt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#bd93f9">2</span> <span style="color:#ff79c6">*</span> n <span style="color:#ff79c6">/</span> (r <span style="color:#ff79c6">-</span> l), <span style="color:#bd93f9">0</span>, (l <span style="color:#ff79c6">+</span> r) <span style="color:#ff79c6">/</span> (l <span style="color:#ff79c6">-</span> r), <span style="color:#bd93f9">0</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">2</span> <span style="color:#ff79c6">*</span> n <span style="color:#ff79c6">/</span> (t <span style="color:#ff79c6">-</span> b), (b <span style="color:#ff79c6">+</span> t) <span style="color:#ff79c6">/</span> (b <span style="color:#ff79c6">-</span> t), <span style="color:#bd93f9">0</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">0</span>, (n <span style="color:#ff79c6">+</span> f) <span style="color:#ff79c6">/</span> (n <span style="color:#ff79c6">-</span> f), <span style="color:#bd93f9">2</span> <span style="color:#ff79c6">*</span> f <span style="color:#ff79c6">*</span> n <span style="color:#ff79c6">/</span> (f <span style="color:#ff79c6">-</span> n),
+</span></span><span style="display:flex;"><span>        <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">1</span>, <span style="color:#bd93f9">0</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    projection <span style="color:#ff79c6">=</span> temp <span style="color:#ff79c6">*</span> projection;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#6272a4">// 坐标系变换
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    Eigen<span style="color:#ff79c6">::</span>Matrix4f tran;
+</span></span><span style="display:flex;"><span>    tran <span style="color:#ff79c6">&lt;&lt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#bd93f9">1</span>, <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">0</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">1</span>, <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">0</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">0</span>, <span style="color:#ff79c6">-</span><span style="color:#bd93f9">1</span>, <span style="color:#bd93f9">0</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">1</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    projection <span style="color:#ff79c6">=</span> tran <span style="color:#ff79c6">*</span> projection;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">return</span> projection;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="3-blinn-phong-反射模型">3. Blinn-phong 反射模型</h3>
+<p>按照公式实现即可：</p>
+<p><img src="/img/games101_hw_3/2.png" alt="Blinn-phong 反射模型" title="Blinn-phong 反射模型"></p>
+<p><img src="/img/games101_hw_3/5.png" alt="Blinn-phong渲染结果" title="Blinn-phong渲染结果"></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-c++" data-lang="c++"><span style="display:flex;"><span>Eigen<span style="color:#ff79c6">::</span>Vector3f phong_fragment_shader(<span style="color:#ff79c6">const</span> fragment_shader_payload<span style="color:#ff79c6">&amp;</span> payload) {
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f ka <span style="color:#ff79c6">=</span> Eigen<span style="color:#ff79c6">::</span>Vector3f(<span style="color:#bd93f9">0.005</span>, <span style="color:#bd93f9">0.005</span>, <span style="color:#bd93f9">0.005</span>);
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f kd <span style="color:#ff79c6">=</span> payload.color;
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f ks <span style="color:#ff79c6">=</span> Eigen<span style="color:#ff79c6">::</span>Vector3f(<span style="color:#bd93f9">0.7937</span>, <span style="color:#bd93f9">0.7937</span>, <span style="color:#bd93f9">0.7937</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">auto</span> l1 <span style="color:#ff79c6">=</span> light{ {<span style="color:#bd93f9">20</span>, <span style="color:#bd93f9">20</span>, <span style="color:#bd93f9">20</span>}, {<span style="color:#bd93f9">500</span>, <span style="color:#bd93f9">500</span>, <span style="color:#bd93f9">500</span>} };
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">auto</span> l2 <span style="color:#ff79c6">=</span> light{ {<span style="color:#ff79c6">-</span><span style="color:#bd93f9">20</span>, <span style="color:#bd93f9">20</span>, <span style="color:#bd93f9">0</span>}, {<span style="color:#bd93f9">500</span>, <span style="color:#bd93f9">500</span>, <span style="color:#bd93f9">500</span>} };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    std<span style="color:#ff79c6">::</span>vector<span style="color:#ff79c6">&lt;</span>light<span style="color:#ff79c6">&gt;</span> lights <span style="color:#ff79c6">=</span> { l1, l2 };
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f amb_light_intensity{ <span style="color:#bd93f9">10</span>, <span style="color:#bd93f9">10</span>, <span style="color:#bd93f9">10</span> };
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f eye_pos{ <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">10</span> };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> p <span style="color:#ff79c6">=</span> <span style="color:#bd93f9">150</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f color <span style="color:#ff79c6">=</span> payload.color;
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f point <span style="color:#ff79c6">=</span> payload.view_pos;
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f normal <span style="color:#ff79c6">=</span> payload.normal;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f result_color <span style="color:#ff79c6">=</span> { <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">0</span> };
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">for</span> (<span style="color:#ff79c6">auto</span><span style="color:#ff79c6">&amp;</span> <span style="color:#8be9fd;font-style:italic">light</span> : lights) {
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// DONE: For each light source in the code, calculate what the *ambient*, *diffuse*, and *specular* 
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        <span style="color:#6272a4">// components are. Then, accumulate that result on the *result_color* object.
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        <span style="color:#6272a4">// cwiseProduct()：矩阵点对点相乘
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// 衰减半径
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        <span style="color:#8be9fd">float</span> r <span style="color:#ff79c6">=</span> (light.position <span style="color:#ff79c6">-</span> point).norm();
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// 入射光
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        Eigen<span style="color:#ff79c6">::</span>Vector3f l <span style="color:#ff79c6">=</span> (light.position <span style="color:#ff79c6">-</span> point).normalized();
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// 视线
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        Eigen<span style="color:#ff79c6">::</span>Vector3f e <span style="color:#ff79c6">=</span> (eye_pos <span style="color:#ff79c6">-</span> point).normalized();
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// 半程向量
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        Eigen<span style="color:#ff79c6">::</span>Vector3f h <span style="color:#ff79c6">=</span> (l <span style="color:#ff79c6">+</span> e).normalized();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// 环境光
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        Eigen<span style="color:#ff79c6">::</span>Vector3f la <span style="color:#ff79c6">=</span> ka.cwiseProduct(amb_light_intensity);
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// 漫反射
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        Eigen<span style="color:#ff79c6">::</span>Vector3f ld <span style="color:#ff79c6">=</span> kd.cwiseProduct(light.intensity <span style="color:#ff79c6">/</span> pow(r, <span style="color:#bd93f9">2</span>)) <span style="color:#ff79c6">*</span> std<span style="color:#ff79c6">::</span>max(<span style="color:#bd93f9">0.0f</span>, normal.dot(l));
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// 高光
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        Eigen<span style="color:#ff79c6">::</span>Vector3f ls <span style="color:#ff79c6">=</span> ks.cwiseProduct(light.intensity <span style="color:#ff79c6">/</span> pow(r, <span style="color:#bd93f9">2</span>)) <span style="color:#ff79c6">*</span> pow(std<span style="color:#ff79c6">::</span>max(<span style="color:#bd93f9">0.0f</span>, normal.dot(h)), p);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        result_color <span style="color:#ff79c6">=</span> result_color <span style="color:#ff79c6">+</span> la <span style="color:#ff79c6">+</span> ld <span style="color:#ff79c6">+</span> ls;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">return</span> result_color <span style="color:#ff79c6">*</span> <span style="color:#bd93f9">255.f</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="4-纹理">4. 纹理</h3>
+<p>在实现 Blinn-Phong 的基础上，将纹理颜色视为公式中的 kd，将 phong_fragment_shader 的代码拷贝到 texture_fragment_shader, 在此基础上正确实现 Texture Mapping。作业不需要考虑双线性插值和 mipmap ，直接把纹理坐标插值算出来调用提供的接口即可。</p>
+<p><img src="/img/games101_hw_3/6.png" alt="纹理渲染结果" title="纹理渲染结果"></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-c++" data-lang="c++"><span style="display:flex;"><span>Eigen<span style="color:#ff79c6">::</span>Vector3f texture_fragment_shader(<span style="color:#ff79c6">const</span> fragment_shader_payload<span style="color:#ff79c6">&amp;</span> payload) {
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f return_color <span style="color:#ff79c6">=</span> { <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">0</span> };
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">if</span> (payload.texture) {
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// DONE: Get the texture value at the texture coordinates of the current fragment
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        return_color <span style="color:#ff79c6">=</span> payload.texture<span style="color:#ff79c6">-&gt;</span>getColor(payload.tex_coords.x(), payload.tex_coords.y());
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f texture_color;
+</span></span><span style="display:flex;"><span>    texture_color <span style="color:#ff79c6">&lt;&lt;</span> return_color.x(), return_color.y(), return_color.z();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f ka <span style="color:#ff79c6">=</span> Eigen<span style="color:#ff79c6">::</span>Vector3f(<span style="color:#bd93f9">0.005</span>, <span style="color:#bd93f9">0.005</span>, <span style="color:#bd93f9">0.005</span>);
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f kd <span style="color:#ff79c6">=</span> texture_color <span style="color:#ff79c6">/</span> <span style="color:#bd93f9">255.f</span>;
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f ks <span style="color:#ff79c6">=</span> Eigen<span style="color:#ff79c6">::</span>Vector3f(<span style="color:#bd93f9">0.7937</span>, <span style="color:#bd93f9">0.7937</span>, <span style="color:#bd93f9">0.7937</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">auto</span> l1 <span style="color:#ff79c6">=</span> light{ {<span style="color:#bd93f9">20</span>, <span style="color:#bd93f9">20</span>, <span style="color:#bd93f9">20</span>}, {<span style="color:#bd93f9">500</span>, <span style="color:#bd93f9">500</span>, <span style="color:#bd93f9">500</span>} };
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">auto</span> l2 <span style="color:#ff79c6">=</span> light{ {<span style="color:#ff79c6">-</span><span style="color:#bd93f9">20</span>, <span style="color:#bd93f9">20</span>, <span style="color:#bd93f9">0</span>}, {<span style="color:#bd93f9">500</span>, <span style="color:#bd93f9">500</span>, <span style="color:#bd93f9">500</span>} };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    std<span style="color:#ff79c6">::</span>vector<span style="color:#ff79c6">&lt;</span>light<span style="color:#ff79c6">&gt;</span> lights <span style="color:#ff79c6">=</span> { l1, l2 };
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f amb_light_intensity{ <span style="color:#bd93f9">10</span>, <span style="color:#bd93f9">10</span>, <span style="color:#bd93f9">10</span> };
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f eye_pos{ <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">10</span> };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> p <span style="color:#ff79c6">=</span> <span style="color:#bd93f9">150</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f color <span style="color:#ff79c6">=</span> texture_color;
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f point <span style="color:#ff79c6">=</span> payload.view_pos;
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f normal <span style="color:#ff79c6">=</span> payload.normal;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f result_color <span style="color:#ff79c6">=</span> { <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">0</span> };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">for</span> (<span style="color:#ff79c6">auto</span><span style="color:#ff79c6">&amp;</span> <span style="color:#8be9fd;font-style:italic">light</span> : lights) {
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// DONE: For each light source in the code, calculate what the *ambient*, *diffuse*, and *specular* 
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        <span style="color:#6272a4">// components are. Then, accumulate that result on the *result_color* object.
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// 衰减半径
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        <span style="color:#8be9fd">float</span> r <span style="color:#ff79c6">=</span> (light.position <span style="color:#ff79c6">-</span> point).norm();
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// 入射光
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        Eigen<span style="color:#ff79c6">::</span>Vector3f l <span style="color:#ff79c6">=</span> (light.position <span style="color:#ff79c6">-</span> point).normalized();
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// 视线
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        Eigen<span style="color:#ff79c6">::</span>Vector3f e <span style="color:#ff79c6">=</span> (eye_pos <span style="color:#ff79c6">-</span> point).normalized();
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// 半程向量
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        Eigen<span style="color:#ff79c6">::</span>Vector3f h <span style="color:#ff79c6">=</span> (l <span style="color:#ff79c6">+</span> e).normalized();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// 环境光
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        Eigen<span style="color:#ff79c6">::</span>Vector3f la <span style="color:#ff79c6">=</span> ka.cwiseProduct(amb_light_intensity);
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// 漫反射
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        Eigen<span style="color:#ff79c6">::</span>Vector3f ld <span style="color:#ff79c6">=</span> kd.cwiseProduct(light.intensity <span style="color:#ff79c6">/</span> pow(r, <span style="color:#bd93f9">2</span>)) <span style="color:#ff79c6">*</span> std<span style="color:#ff79c6">::</span>max(<span style="color:#bd93f9">0.0f</span>, normal.dot(l));
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// 高光
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        Eigen<span style="color:#ff79c6">::</span>Vector3f ls <span style="color:#ff79c6">=</span> ks.cwiseProduct(light.intensity <span style="color:#ff79c6">/</span> pow(r, <span style="color:#bd93f9">2</span>)) <span style="color:#ff79c6">*</span> pow(std<span style="color:#ff79c6">::</span>max(<span style="color:#bd93f9">0.0f</span>, normal.dot(h)), p);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        result_color <span style="color:#ff79c6">=</span> result_color <span style="color:#ff79c6">+</span> la <span style="color:#ff79c6">+</span> ld <span style="color:#ff79c6">+</span> ls;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">return</span> result_color <span style="color:#ff79c6">*</span> <span style="color:#bd93f9">255.f</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="5-bump-mapping">5. Bump Mapping</h3>
+<p>按照注释提示实现即可，注意h(u, v) = texture_color(u, v).norm()，w和h是纹理的宽度和高度。</p>
+<p><img src="/img/games101_hw_3/7.png" alt="Bump Mapping渲染结果" title="Bump Mapping渲染结果"></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-c++" data-lang="c++"><span style="display:flex;"><span>Eigen<span style="color:#ff79c6">::</span>Vector3f bump_fragment_shader(<span style="color:#ff79c6">const</span> fragment_shader_payload<span style="color:#ff79c6">&amp;</span> payload) {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f ka <span style="color:#ff79c6">=</span> Eigen<span style="color:#ff79c6">::</span>Vector3f(<span style="color:#bd93f9">0.005</span>, <span style="color:#bd93f9">0.005</span>, <span style="color:#bd93f9">0.005</span>);
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f kd <span style="color:#ff79c6">=</span> payload.color;
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f ks <span style="color:#ff79c6">=</span> Eigen<span style="color:#ff79c6">::</span>Vector3f(<span style="color:#bd93f9">0.7937</span>, <span style="color:#bd93f9">0.7937</span>, <span style="color:#bd93f9">0.7937</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">auto</span> l1 <span style="color:#ff79c6">=</span> light{ {<span style="color:#bd93f9">20</span>, <span style="color:#bd93f9">20</span>, <span style="color:#bd93f9">20</span>}, {<span style="color:#bd93f9">500</span>, <span style="color:#bd93f9">500</span>, <span style="color:#bd93f9">500</span>} };
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">auto</span> l2 <span style="color:#ff79c6">=</span> light{ {<span style="color:#ff79c6">-</span><span style="color:#bd93f9">20</span>, <span style="color:#bd93f9">20</span>, <span style="color:#bd93f9">0</span>}, {<span style="color:#bd93f9">500</span>, <span style="color:#bd93f9">500</span>, <span style="color:#bd93f9">500</span>} };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    std<span style="color:#ff79c6">::</span>vector<span style="color:#ff79c6">&lt;</span>light<span style="color:#ff79c6">&gt;</span> lights <span style="color:#ff79c6">=</span> { l1, l2 };
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f amb_light_intensity{ <span style="color:#bd93f9">10</span>, <span style="color:#bd93f9">10</span>, <span style="color:#bd93f9">10</span> };
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f eye_pos{ <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">10</span> };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> p <span style="color:#ff79c6">=</span> <span style="color:#bd93f9">150</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f color <span style="color:#ff79c6">=</span> payload.color;
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f point <span style="color:#ff79c6">=</span> payload.view_pos;
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f normal <span style="color:#ff79c6">=</span> payload.normal;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> kh <span style="color:#ff79c6">=</span> <span style="color:#bd93f9">0.2</span>, kn <span style="color:#ff79c6">=</span> <span style="color:#bd93f9">0.1</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#6272a4">// DONE: Implement bump mapping here
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#6272a4">// Let n = normal = (x, y, z)
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#6272a4">// Vector t = (x*y/sqrt(x*x+z*z),sqrt(x*x+z*z),z*y/sqrt(x*x+z*z))
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#6272a4">// Vector b = n cross product t
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#6272a4">// Matrix TBN = [t b n]
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#6272a4">// dU = kh * kn * (h(u+1/w,v)-h(u,v))
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#6272a4">// dV = kh * kn * (h(u,v+1/h)-h(u,v))
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#6272a4">// Vector ln = (-dU, -dV, 1)
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#6272a4">// Normal n = normalize(TBN * ln)
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> x <span style="color:#ff79c6">=</span> normal.x();
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> y <span style="color:#ff79c6">=</span> normal.y();
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> z <span style="color:#ff79c6">=</span> normal.z();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f t{ x <span style="color:#ff79c6">*</span> y <span style="color:#ff79c6">/</span> std<span style="color:#ff79c6">::</span>sqrt(x <span style="color:#ff79c6">*</span> x <span style="color:#ff79c6">+</span> z <span style="color:#ff79c6">*</span> z), std<span style="color:#ff79c6">::</span>sqrt(x <span style="color:#ff79c6">*</span> x <span style="color:#ff79c6">+</span> z <span style="color:#ff79c6">*</span> z), z <span style="color:#ff79c6">*</span> y <span style="color:#ff79c6">/</span> std<span style="color:#ff79c6">::</span>sqrt(x <span style="color:#ff79c6">*</span> x <span style="color:#ff79c6">+</span> z <span style="color:#ff79c6">*</span> z) };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f b <span style="color:#ff79c6">=</span> normal.cross(t);
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Matrix3f TBN;
+</span></span><span style="display:flex;"><span>    TBN <span style="color:#ff79c6">&lt;&lt;</span> t, b, normal;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> u <span style="color:#ff79c6">=</span> payload.tex_coords.x();
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> v <span style="color:#ff79c6">=</span> payload.tex_coords.y();
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">int</span> w <span style="color:#ff79c6">=</span> payload.texture<span style="color:#ff79c6">-&gt;</span>width;
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">int</span> h <span style="color:#ff79c6">=</span> payload.texture<span style="color:#ff79c6">-&gt;</span>height;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">auto</span> dU <span style="color:#ff79c6">=</span> kh <span style="color:#ff79c6">*</span> kn <span style="color:#ff79c6">*</span> (payload.texture<span style="color:#ff79c6">-&gt;</span>getColor(u <span style="color:#ff79c6">+</span> <span style="color:#bd93f9">1.0</span> <span style="color:#ff79c6">/</span> w, v).norm() <span style="color:#ff79c6">-</span> payload.texture<span style="color:#ff79c6">-&gt;</span>getColor(u, v).norm());
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">auto</span> dV <span style="color:#ff79c6">=</span> kh <span style="color:#ff79c6">*</span> kn <span style="color:#ff79c6">*</span> (payload.texture<span style="color:#ff79c6">-&gt;</span>getColor(u, v <span style="color:#ff79c6">+</span> <span style="color:#bd93f9">1.0</span> <span style="color:#ff79c6">/</span> h).norm() <span style="color:#ff79c6">-</span> payload.texture<span style="color:#ff79c6">-&gt;</span>getColor(u, v).norm());
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f ln{ <span style="color:#ff79c6">-</span>dU,<span style="color:#ff79c6">-</span>dV,<span style="color:#bd93f9">1.0</span> };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    normal <span style="color:#ff79c6">=</span> (TBN <span style="color:#ff79c6">*</span> ln).normalized();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f result_color <span style="color:#ff79c6">=</span> { <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">0</span> };
+</span></span><span style="display:flex;"><span>    result_color <span style="color:#ff79c6">=</span> normal;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">return</span> result_color <span style="color:#ff79c6">*</span> <span style="color:#bd93f9">255.f</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="6-displacement-mapping">6. Displacement Mapping</h3>
+<p>按照注释提示实现即可。</p>
+<p><img src="/img/games101_hw_3/8.png" alt="Displacement Mapping渲染结果" title="Displacement Mapping渲染结果"></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-c++" data-lang="c++"><span style="display:flex;"><span>Eigen<span style="color:#ff79c6">::</span>Vector3f displacement_fragment_shader(<span style="color:#ff79c6">const</span> fragment_shader_payload<span style="color:#ff79c6">&amp;</span> payload) {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f ka <span style="color:#ff79c6">=</span> Eigen<span style="color:#ff79c6">::</span>Vector3f(<span style="color:#bd93f9">0.005</span>, <span style="color:#bd93f9">0.005</span>, <span style="color:#bd93f9">0.005</span>);
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f kd <span style="color:#ff79c6">=</span> payload.color;
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f ks <span style="color:#ff79c6">=</span> Eigen<span style="color:#ff79c6">::</span>Vector3f(<span style="color:#bd93f9">0.7937</span>, <span style="color:#bd93f9">0.7937</span>, <span style="color:#bd93f9">0.7937</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">auto</span> l1 <span style="color:#ff79c6">=</span> light{ {<span style="color:#bd93f9">20</span>, <span style="color:#bd93f9">20</span>, <span style="color:#bd93f9">20</span>}, {<span style="color:#bd93f9">500</span>, <span style="color:#bd93f9">500</span>, <span style="color:#bd93f9">500</span>} };
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">auto</span> l2 <span style="color:#ff79c6">=</span> light{ {<span style="color:#ff79c6">-</span><span style="color:#bd93f9">20</span>, <span style="color:#bd93f9">20</span>, <span style="color:#bd93f9">0</span>}, {<span style="color:#bd93f9">500</span>, <span style="color:#bd93f9">500</span>, <span style="color:#bd93f9">500</span>} };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    std<span style="color:#ff79c6">::</span>vector<span style="color:#ff79c6">&lt;</span>light<span style="color:#ff79c6">&gt;</span> lights <span style="color:#ff79c6">=</span> { l1, l2 };
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f amb_light_intensity{ <span style="color:#bd93f9">10</span>, <span style="color:#bd93f9">10</span>, <span style="color:#bd93f9">10</span> };
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f eye_pos{ <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">10</span> };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> p <span style="color:#ff79c6">=</span> <span style="color:#bd93f9">150</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f color <span style="color:#ff79c6">=</span> payload.color;
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f point <span style="color:#ff79c6">=</span> payload.view_pos;
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f normal <span style="color:#ff79c6">=</span> payload.normal;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> kh <span style="color:#ff79c6">=</span> <span style="color:#bd93f9">0.2</span>, kn <span style="color:#ff79c6">=</span> <span style="color:#bd93f9">0.1</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#6272a4">// DONE: Implement displacement mapping here
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#6272a4">// Let n = normal = (x, y, z)
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#6272a4">// Vector t = (x*y/sqrt(x*x+z*z),sqrt(x*x+z*z),z*y/sqrt(x*x+z*z))
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#6272a4">// Vector b = n cross product t
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#6272a4">// Matrix TBN = [t b n]
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#6272a4">// dU = kh * kn * (h(u+1/w,v)-h(u,v))
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#6272a4">// dV = kh * kn * (h(u,v+1/h)-h(u,v))
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#6272a4">// Vector ln = (-dU, -dV, 1)
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#6272a4">// Position p = p + kn * n * h(u,v)
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#6272a4">// Normal n = normalize(TBN * ln)
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> x <span style="color:#ff79c6">=</span> normal.x();
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> y <span style="color:#ff79c6">=</span> normal.y();
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> z <span style="color:#ff79c6">=</span> normal.z();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f t{ x <span style="color:#ff79c6">*</span> y <span style="color:#ff79c6">/</span> std<span style="color:#ff79c6">::</span>sqrt(x <span style="color:#ff79c6">*</span> x <span style="color:#ff79c6">+</span> z <span style="color:#ff79c6">*</span> z), std<span style="color:#ff79c6">::</span>sqrt(x <span style="color:#ff79c6">*</span> x <span style="color:#ff79c6">+</span> z <span style="color:#ff79c6">*</span> z), z <span style="color:#ff79c6">*</span> y <span style="color:#ff79c6">/</span> std<span style="color:#ff79c6">::</span>sqrt(x <span style="color:#ff79c6">*</span> x <span style="color:#ff79c6">+</span> z <span style="color:#ff79c6">*</span> z) };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f b <span style="color:#ff79c6">=</span> normal.cross(t);
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Matrix3f TBN;
+</span></span><span style="display:flex;"><span>    TBN <span style="color:#ff79c6">&lt;&lt;</span> t, b, normal;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> u <span style="color:#ff79c6">=</span> payload.tex_coords.x();
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> v <span style="color:#ff79c6">=</span> payload.tex_coords.y();
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">int</span> w <span style="color:#ff79c6">=</span> payload.texture<span style="color:#ff79c6">-&gt;</span>width;
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">int</span> h <span style="color:#ff79c6">=</span> payload.texture<span style="color:#ff79c6">-&gt;</span>height;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">auto</span> dU <span style="color:#ff79c6">=</span> kh <span style="color:#ff79c6">*</span> kn <span style="color:#ff79c6">*</span> (payload.texture<span style="color:#ff79c6">-&gt;</span>getColor(u <span style="color:#ff79c6">+</span> <span style="color:#bd93f9">1.0</span> <span style="color:#ff79c6">/</span> w, v).norm() <span style="color:#ff79c6">-</span> payload.texture<span style="color:#ff79c6">-&gt;</span>getColor(u, v).norm());
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">auto</span> dV <span style="color:#ff79c6">=</span> kh <span style="color:#ff79c6">*</span> kn <span style="color:#ff79c6">*</span> (payload.texture<span style="color:#ff79c6">-&gt;</span>getColor(u, v <span style="color:#ff79c6">+</span> <span style="color:#bd93f9">1.0</span> <span style="color:#ff79c6">/</span> h).norm() <span style="color:#ff79c6">-</span> payload.texture<span style="color:#ff79c6">-&gt;</span>getColor(u, v).norm());
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f ln{ <span style="color:#ff79c6">-</span>dU,<span style="color:#ff79c6">-</span>dV,<span style="color:#bd93f9">1.0</span> };
+</span></span><span style="display:flex;"><span>    point <span style="color:#ff79c6">=</span> point <span style="color:#ff79c6">+</span> kn <span style="color:#ff79c6">*</span> normal <span style="color:#ff79c6">*</span> payload.texture<span style="color:#ff79c6">-&gt;</span>getColor(u, v).norm();
+</span></span><span style="display:flex;"><span>    normal <span style="color:#ff79c6">=</span> (TBN <span style="color:#ff79c6">*</span> ln).normalized();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f result_color <span style="color:#ff79c6">=</span> { <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">0</span> };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">for</span> (<span style="color:#ff79c6">auto</span><span style="color:#ff79c6">&amp;</span> <span style="color:#8be9fd;font-style:italic">light</span> : lights) {
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// DONE: For each light source in the code, calculate what the *ambient*, *diffuse*, and *specular* 
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        <span style="color:#6272a4">// components are. Then, accumulate that result on the *result_color* object.
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// 衰减半径
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        <span style="color:#8be9fd">float</span> r <span style="color:#ff79c6">=</span> (light.position <span style="color:#ff79c6">-</span> point).norm();
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// 入射光
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        Eigen<span style="color:#ff79c6">::</span>Vector3f l <span style="color:#ff79c6">=</span> (light.position <span style="color:#ff79c6">-</span> point).normalized();
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// 视线
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        Eigen<span style="color:#ff79c6">::</span>Vector3f e <span style="color:#ff79c6">=</span> (eye_pos <span style="color:#ff79c6">-</span> point).normalized();
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// 半程向量
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        Eigen<span style="color:#ff79c6">::</span>Vector3f h <span style="color:#ff79c6">=</span> (l <span style="color:#ff79c6">+</span> e).normalized();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// 环境光
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        Eigen<span style="color:#ff79c6">::</span>Vector3f la <span style="color:#ff79c6">=</span> ka.cwiseProduct(amb_light_intensity);
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// 漫反射
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        Eigen<span style="color:#ff79c6">::</span>Vector3f ld <span style="color:#ff79c6">=</span> kd.cwiseProduct(light.intensity <span style="color:#ff79c6">/</span> pow(r, <span style="color:#bd93f9">2</span>)) <span style="color:#ff79c6">*</span> std<span style="color:#ff79c6">::</span>max(<span style="color:#bd93f9">0.0f</span>, normal.dot(l));
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// 高光
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        Eigen<span style="color:#ff79c6">::</span>Vector3f ls <span style="color:#ff79c6">=</span> ks.cwiseProduct(light.intensity <span style="color:#ff79c6">/</span> pow(r, <span style="color:#bd93f9">2</span>)) <span style="color:#ff79c6">*</span> pow(std<span style="color:#ff79c6">::</span>max(<span style="color:#bd93f9">0.0f</span>, normal.dot(h)), p);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        result_color <span style="color:#ff79c6">=</span> result_color <span style="color:#ff79c6">+</span> la <span style="color:#ff79c6">+</span> ld <span style="color:#ff79c6">+</span> ls; 
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">return</span> result_color <span style="color:#ff79c6">*</span> <span style="color:#bd93f9">255.f</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="7-尝试更多模型">7. 尝试更多模型</h3>
+<p>试了一下工程里的其他模型，替换文件路径即可。</p>
+<p><img src="/img/games101_hw_3/9.png" alt="兔兔模型" title="兔兔模型"></p>
+<p><img src="/img/games101_hw_3/10.png" alt="石头模型" title="石头模型"></p>
+<h3 id="8-双线性纹理插值">8. 双线性纹理插值</h3>
+<p>使用双线性插值进行纹理采样, 在 Texture 类中实现一个新方法 Vector3f getColorBilinear(float u, float v) 并通过 fragment shader 调用。需要注意 uv map 和 image <strong>在 v 方向相反</strong>。</p>
+<p><img src="/img/games101_hw_3/11.png" alt="双线性插值" title="双线性插值"></p>
+<p><img src="/img/games101_hw_3/12.png" alt="双线性插值" title="双线性插值"></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-c++" data-lang="c++"><span style="display:flex;"><span>    Eigen<span style="color:#ff79c6">::</span>Vector3f getColorBilinear(<span style="color:#8be9fd">float</span> u, <span style="color:#8be9fd">float</span> v) {
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">auto</span> u_img <span style="color:#ff79c6">=</span> u <span style="color:#ff79c6">*</span> (width <span style="color:#ff79c6">-</span> <span style="color:#bd93f9">1</span>);
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">auto</span> v_img <span style="color:#ff79c6">=</span> (<span style="color:#bd93f9">1</span> <span style="color:#ff79c6">-</span> v) <span style="color:#ff79c6">*</span> (height <span style="color:#ff79c6">-</span> <span style="color:#bd93f9">1</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// 中心点坐标
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        <span style="color:#8be9fd">int</span> x <span style="color:#ff79c6">=</span> std<span style="color:#ff79c6">::</span>floor(u_img);
+</span></span><span style="display:flex;"><span>        <span style="color:#8be9fd">int</span> y <span style="color:#ff79c6">=</span> std<span style="color:#ff79c6">::</span>floor(v_img);
+</span></span><span style="display:flex;"><span>        x <span style="color:#ff79c6">=</span> (u_img <span style="color:#ff79c6">-</span> x) <span style="color:#ff79c6">&gt;</span> <span style="color:#bd93f9">0.5</span> <span style="color:#ff79c6">?</span> std<span style="color:#ff79c6">::</span>ceil(u_img) <span style="color:#ff79c6">:</span> std<span style="color:#ff79c6">::</span>floor(u_img);
+</span></span><span style="display:flex;"><span>        y <span style="color:#ff79c6">=</span> (v_img <span style="color:#ff79c6">-</span> y) <span style="color:#ff79c6">&gt;</span> <span style="color:#bd93f9">0.5</span> <span style="color:#ff79c6">?</span> std<span style="color:#ff79c6">::</span>ceil(v_img) <span style="color:#ff79c6">:</span> std<span style="color:#ff79c6">::</span>floor(v_img);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// 周围四个点(注意参考系方向)
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        <span style="color:#ff79c6">auto</span> u00 <span style="color:#ff79c6">=</span> image_data.at<span style="color:#ff79c6">&lt;</span>cv<span style="color:#ff79c6">::</span>Vec3b<span style="color:#ff79c6">&gt;</span>(y <span style="color:#ff79c6">+</span> <span style="color:#bd93f9">0.5</span>, x <span style="color:#ff79c6">-</span> <span style="color:#bd93f9">0.5</span>);
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">auto</span> u01 <span style="color:#ff79c6">=</span> image_data.at<span style="color:#ff79c6">&lt;</span>cv<span style="color:#ff79c6">::</span>Vec3b<span style="color:#ff79c6">&gt;</span>(y <span style="color:#ff79c6">-</span> <span style="color:#bd93f9">0.5</span>, x <span style="color:#ff79c6">-</span> <span style="color:#bd93f9">0.5</span>);
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">auto</span> u10 <span style="color:#ff79c6">=</span> image_data.at<span style="color:#ff79c6">&lt;</span>cv<span style="color:#ff79c6">::</span>Vec3b<span style="color:#ff79c6">&gt;</span>(y <span style="color:#ff79c6">+</span> <span style="color:#bd93f9">0.5</span>, x <span style="color:#ff79c6">+</span> <span style="color:#bd93f9">0.5</span>);
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">auto</span> u11 <span style="color:#ff79c6">=</span> image_data.at<span style="color:#ff79c6">&lt;</span>cv<span style="color:#ff79c6">::</span>Vec3b<span style="color:#ff79c6">&gt;</span>(y <span style="color:#ff79c6">-</span> <span style="color:#bd93f9">0.5</span>, x <span style="color:#ff79c6">+</span> <span style="color:#bd93f9">0.5</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#8be9fd">float</span> s <span style="color:#ff79c6">=</span> u_img <span style="color:#ff79c6">-</span> x <span style="color:#ff79c6">+</span> <span style="color:#bd93f9">0.5</span>;
+</span></span><span style="display:flex;"><span>        <span style="color:#8be9fd">float</span> t <span style="color:#ff79c6">=</span> y <span style="color:#ff79c6">-</span> v_img <span style="color:#ff79c6">+</span> <span style="color:#bd93f9">0.5</span>;
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">auto</span> u0 <span style="color:#ff79c6">=</span> u00 <span style="color:#ff79c6">+</span> s <span style="color:#ff79c6">*</span> (u10 <span style="color:#ff79c6">-</span> u00);
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">auto</span> u1 <span style="color:#ff79c6">=</span> u01 <span style="color:#ff79c6">+</span> s <span style="color:#ff79c6">*</span> (u11 <span style="color:#ff79c6">-</span> u01);
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">auto</span> color <span style="color:#ff79c6">=</span> u0 <span style="color:#ff79c6">+</span> t <span style="color:#ff79c6">*</span> (u1 <span style="color:#ff79c6">-</span> u0);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">return</span> Eigen<span style="color:#ff79c6">::</span>Vector3f(color[<span style="color:#bd93f9">0</span>], color[<span style="color:#bd93f9">1</span>], color[<span style="color:#bd93f9">2</span>]);
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><p>为了便于检查效果，将奶牛纹理贴图大小压缩至原来的25%。以下是前后对比，可见使用双线性插值后纹理着色更加平滑。</p>
+<p><img src="/img/games101_hw_3/13.png" alt="双线性插值效果对比" title="双线性插值效果对比"></p>
+
+                </div>
+
+                <div class="row middle-xs">
+                    <div class="col-xs-12">
+                        Tags:
+                        
+                        <div class="post-tags">
+                            <a href="/tags/%E6%8A%80%E6%9C%AF%E6%9D%82%E8%B0%88/">
+                                技术杂谈
+                            </a>
+                        </div>
+                        
+                        <div class="post-tags">
+                            <a href="/tags/games101/">
+                                GAMES101
+                            </a>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+                <div class="row">
+                    
+                    <div class="col-xs-12"><br><br>
+                        
+                        <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img
+                                alt="Creative Commons License" style="border-width:0"
+                                src="/img/cc.png" class="loading"
+                                data-was-processed="true"></a>
+                    </div>
+                </div>
+
+                
+
+<div class="related-content">
+  <h3>Related Posts</h3>
+  <ul>
+    
+    <li><a href="/2022/11/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A2triangles-and-z-buffering/">GAMES101作业本——作业2：Triangles and Z-buffering</a></li>
+    
+    <li><a href="/2022/11/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A1%E6%97%8B%E8%BD%AC%E4%B8%8E%E6%8A%95%E5%BD%B1/">GAMES101作业本——作业1：旋转与投影</a></li>
+    
+    <li><a href="/2022/11/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A0%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E4%BD%BF%E7%94%A8/">GAMES101作业本——作业0：虚拟机的使用</a></li>
+    
+  </ul>
+</div>
+
+
+
+                
+                
+                <div style="height: 50px;"></div>
+                
+                
+
+                <div class="site-footer">
+  
+  <div class="site-footer-item">
+    <a href="https://github.com/jiuyuezai" target="_blank">GitHub</a>
+  </div>
+  
+  <div class="site-footer-item">
+    <a href="https://www.zhihu.com/people/jiuyuezai" target="_blank">Zhihu</a>
+  </div>
+  
+</div>
+
+            </div>
+        </div>
+    </article>
+
+    
+<script src="/js/lazyload.min.js"></script>
+<script>
+  var lazyImage = new LazyLoad({
+    container: document.getElementById('article')
+  });
+</script>
+
+<script>
+  
+  
+    
+    
+  
+</script>
+
+    
+
+</body>
+
+</html>
