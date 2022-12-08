@@ -6,7 +6,18 @@
     <description>Recent content on Wong Der Land</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 04 Dec 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://jiuyuezai.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 08 Dec 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://jiuyuezai.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>GAMES101作业本——作业4：Bézier 曲线</title>
+      <link>https://jiuyuezai.github.io/2022/12/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A4b%C3%A9zier-%E6%9B%B2%E7%BA%BF/</link>
+      <pubDate>Thu, 08 Dec 2022 00:00:00 +0000</pubDate>
+      
+      <guid>https://jiuyuezai.github.io/2022/12/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A4b%C3%A9zier-%E6%9B%B2%E7%BA%BF/</guid>
+      <description>作业描述 Bézier 曲线是一种用于计算机图形学的参数曲线。在本次作业中，需要实现 de Casteljau 算法来绘制由 4 个控制点表示的 Bézier 曲线 (当正确实现该算法时，可以支持绘制由更多点来控制的 Bézier 曲线)。 需要修改的函数在提供的 main.cpp 文件中。
+ bezier：该函数实现绘制 Bézier 曲线的功能。它使用一个控制点序列和一个 OpenCV：：Mat 对象作为输入，没有返回值。它会使 t 在 0 到 1 的范围内进 行迭代，并在每次迭代中使 t 增加一个微小值。对于每个需要计算的 t，将 调用另一个函数 recursive_bezier，然后该函数将返回在 Bézier 曲线上 t 处的点。最后，将返回的点绘制在 OpenCV ：：Mat 对象上。 recursive_bezier：该函数使用一个控制点序列和一个浮点数 t 作为输入， 实现 de Casteljau 算法来返回 Bézier 曲线上对应点的坐标。 附加题：实现对 Bézier 曲线的反走样。(对于一个曲线上的点，不只把它对应于一个像素，你需要根据到像素中心的距离来考虑与它相邻的像素的颜色。)  De Casteljau 算法说明如下：
+ 考虑一个 p0, p1, &amp;hellip; pn 为控制点序列的 Bézier 曲线。首先，将相邻的点连接起来以形成线段。 用 t : (1 − t) 的比例细分每个线段，并找到该分割点。 得到的分割点作为新的控制点序列，新序列的长度会减少一。 如果序列只包含一个点，则返回该点并终止。否则，使用新的控制点序列并 转到步骤 1。 使用 [0,1] 中的多个不同的 t 来执行上述算法，就能得到相应的 Bézier 曲 线。  解题思路 解法一：递归 按照作业描述递归实现。</description>
+    </item>
+    
     <item>
       <title>GAMES101作业本——作业3：Pipeline and Shading</title>
       <link>https://jiuyuezai.github.io/2022/12/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A3pipeline-and-shading/</link>
