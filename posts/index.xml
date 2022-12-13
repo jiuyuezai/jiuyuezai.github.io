@@ -6,7 +6,23 @@
     <description>Recent content in Posts on Wong Der Land</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 08 Dec 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://jiuyuezai.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 13 Dec 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://jiuyuezai.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>GAMES101作业本——作业5：光线与三角形相交</title>
+      <link>https://jiuyuezai.github.io/2022/12/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A5%E5%85%89%E7%BA%BF%E4%B8%8E%E4%B8%89%E8%A7%92%E5%BD%A2%E7%9B%B8%E4%BA%A4/</link>
+      <pubDate>Tue, 13 Dec 2022 00:00:00 +0000</pubDate>
+      
+      <guid>https://jiuyuezai.github.io/2022/12/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A5%E5%85%89%E7%BA%BF%E4%B8%8E%E4%B8%89%E8%A7%92%E5%BD%A2%E7%9B%B8%E4%BA%A4/</guid>
+      <description>作业描述 在光线追踪中最重要的操作之一就是找到光线与物体的交点。一旦找到光线与物体的交点，就可以执行着色并返回像素颜色。在这次作业中，需要实现两个部分：光线的生成和光线与三角的相交。
+本次代码框架的工作流程为：
+ 从 main 函数开始。定义场景的参数，添加物体（球体或三角形）到场景中，并设置其材质，然后将光源添加到场景中。 调用 Render(scene) 函数。在遍历所有像素的循环里，生成对应的光线并将返回的颜色保存在帧缓冲区（framebuffer）中。在渲染过程结束后，帧缓冲区中的信息将被保存为图像。 在生成像素对应的光线后，调用 CastRay 函数，该函数调用 trace 来查询光线与场景中最近的对象的交点。 然后，在此交点执行着色。此处设置了三种不同的着色情况，并且框架已经提供了代码。  需要修改的函数是：
+ Renderer.cpp 中的 Render()：这里需要为每个像素生成一条对应的光线，然后调用函数 castRay() 来得到颜色，最后将颜色存储在帧缓冲区的相应像素中。 Triangle.hpp 中的 rayTriangleIntersect(): v0, v1, v2 是三角形的三个顶点，orig 是光线的起点，dir 是光线单位化的方向向量。tnear, u, v 是需要使用课上推导的 Moller-Trumbore 算法来更新的参数。  解题思路 首先要实现一条从摄像机出发的光线（primar ray），根据此文Ray-Tracing: Generating Camera Rays和作业框架可以得到以下推理过程：
+  按照惯例，平面通常放置在距离相机原点1个单位的位置，且相机看向-Z轴。
+  代码框架中的i、j是raster space下的x、y坐标（以左上角为原点），需要对它们+0.5得到像素中心。为了使之参与计算，需要转换成world space。具体流程如下：
+  将raster space下的像素坐标压缩至[0, 1]，转换为NDC space（Normalized Device Coordinates）。
+$$ { PixelNDC }_{x}=\frac{\left( { Pixel }_{x}+0.5\right)}{ { ImageWidth }} $$ $$ { PixelNDC }_{y}=\frac{\left( { Pixel }_{y}+0.</description>
+    </item>
+    
     <item>
       <title>GAMES101作业本——作业4：Bézier 曲线</title>
       <link>https://jiuyuezai.github.io/2022/12/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A4b%C3%A9zier-%E6%9B%B2%E7%BA%BF/</link>

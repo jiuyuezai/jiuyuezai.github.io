@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="Hugo 0.94.2" />
+
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="Sylvia Wong" />
+  <meta property="og:url" content="https://jiuyuezai.github.io/2022/12/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A5%E5%85%89%E7%BA%BF%E4%B8%8E%E4%B8%89%E8%A7%92%E5%BD%A2%E7%9B%B8%E4%BA%A4/" />
+  <link rel="canonical" href="https://jiuyuezai.github.io/2022/12/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A5%E5%85%89%E7%BA%BF%E4%B8%8E%E4%B8%89%E8%A7%92%E5%BD%A2%E7%9B%B8%E4%BA%A4/" /><link rel="apple-touch-icon" href="/icon.png" />
+  <link rel="icon" href="/icon.png" />
+  <link rel="shortcut" href="/icon.png" /><link rel="alternate" type="application/atom+xml" href="https://jiuyuezai.github.io/index.xml" title="Wong Der Land">
+
+  <script type="application/ld+json">
+  {
+      "@context" : "http://schema.org",
+      "@type" : "BlogPosting",
+      "mainEntityOfPage": {
+           "@type": "WebPage",
+           "@id": "https:\/\/jiuyuezai.github.io\/"
+      },
+      "articleSection" : "posts",
+      "name" : "GAMES101作业本——作业5：光线与三角形相交",
+      "headline" : "GAMES101作业本——作业5：光线与三角形相交",
+      "description" : "作业描述 在光线追踪中最重要的操作之一就是找到光线与物体的交点。一旦找到光线与物体的交点，就可以执行着色并返回像素颜色。在这次作业中，需要实现两个部分：光线的生成和光线与三角的相交。\n本次代码框架的工作流程为：\n 从 main 函数开始。定义场景的参数，添加物体（球体或三角形）到场景中，并设置其材质，然后将光源添加到场景中。 调用 Render(scene) 函数。在遍历所有像素的循环里，生成对应的光线并将返回的颜色保存在帧缓冲区（framebuffer）中。在渲染过程结束后，帧缓冲区中的信息将被保存为图像。 在生成像素对应的光线后，调用 CastRay 函数，该函数调用 trace 来查询光线与场景中最近的对象的交点。 然后，在此交点执行着色。此处设置了三种不同的着色情况，并且框架已经提供了代码。  需要修改的函数是：\n Renderer.cpp 中的 Render()：这里需要为每个像素生成一条对应的光线，然后调用函数 castRay() 来得到颜色，最后将颜色存储在帧缓冲区的相应像素中。 Triangle.hpp 中的 rayTriangleIntersect(): v0, v1, v2 是三角形的三个顶点，orig 是光线的起点，dir 是光线单位化的方向向量。tnear, u, v 是需要使用课上推导的 Moller-Trumbore 算法来更新的参数。  解题思路 首先要实现一条从摄像机出发的光线（primar ray），根据此文Ray-Tracing: Generating Camera Rays和作业框架可以得到以下推理过程：\n  按照惯例，平面通常放置在距离相机原点1个单位的位置，且相机看向-Z轴。\n  代码框架中的i、j是raster space下的x、y坐标（以左上角为原点），需要对它们\u002b0.5得到像素中心。为了使之参与计算，需要转换成world space。具体流程如下：\n  将raster space下的像素坐标压缩至[0, 1]，转换为NDC space（Normalized Device Coordinates）。\n$$ { PixelNDC }_{x}=\\frac{\\left( { Pixel }_{x}\u002b0.5\\right)}{ { ImageWidth }} $$ $$ { PixelNDC }_{y}=\\frac{\\left( { Pixel }_{y}\u002b0.",
+      "inLanguage" : "en-US",
+      "author" : "Sylvia Wong",
+      "creator" : "Sylvia Wong",
+      "publisher": "Sylvia Wong",
+      "accountablePerson" : "Sylvia Wong",
+      "copyrightHolder" : "Sylvia Wong",
+      "copyrightYear" : "2022",
+      "datePublished": "2022-12-13 00:00:00 \u002b0000 UTC",
+      "dateModified" : "2022-12-13 00:00:00 \u002b0000 UTC",
+      "url" : "https:\/\/jiuyuezai.github.io\/2022\/12\/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A5%E5%85%89%E7%BA%BF%E4%B8%8E%E4%B8%89%E8%A7%92%E5%BD%A2%E7%9B%B8%E4%BA%A4\/",
+      "keywords" : [ "技术杂谈","GAMES101", ]
+  }
+</script>
+<title>GAMES101作业本——作业5：光线与三角形相交</title>
+  <meta property="og:title" content="GAMES101作业本——作业5：光线与三角形相交" />
+  <meta property="og:type" content="article" />
+  <meta property="og:description" content="作业描述 在光线追踪中最重要的操作之一就是找到光线与物体的交点。一旦找到光线与物体的交点，就可以执行着色并返回像素颜色。在这次作业中，需要实现两个部分：光线的生成和光线与三角的相交。
+本次代码框架的工作流程为：
+ 从 main 函数开始。定义场景的参数，添加物体（球体或三角形）到场景中，并设置其材质，然后将光源添加到场景中。 调用 Render(scene) 函数。在遍历所有像素的循环里，生成对应的光线并将返回的颜色保存在帧缓冲区（framebuffer）中。在渲染过程结束后，帧缓冲区中的信息将被保存为图像。 在生成像素对应的光线后，调用 CastRay 函数，该函数调用 trace 来查询光线与场景中最近的对象的交点。 然后，在此交点执行着色。此处设置了三种不同的着色情况，并且框架已经提供了代码。  需要修改的函数是：
+ Renderer.cpp 中的 Render()：这里需要为每个像素生成一条对应的光线，然后调用函数 castRay() 来得到颜色，最后将颜色存储在帧缓冲区的相应像素中。 Triangle.hpp 中的 rayTriangleIntersect(): v0, v1, v2 是三角形的三个顶点，orig 是光线的起点，dir 是光线单位化的方向向量。tnear, u, v 是需要使用课上推导的 Moller-Trumbore 算法来更新的参数。  解题思路 首先要实现一条从摄像机出发的光线（primar ray），根据此文Ray-Tracing: Generating Camera Rays和作业框架可以得到以下推理过程：
+  按照惯例，平面通常放置在距离相机原点1个单位的位置，且相机看向-Z轴。
+  代码框架中的i、j是raster space下的x、y坐标（以左上角为原点），需要对它们&#43;0.5得到像素中心。为了使之参与计算，需要转换成world space。具体流程如下：
+  将raster space下的像素坐标压缩至[0, 1]，转换为NDC space（Normalized Device Coordinates）。
+$$ { PixelNDC }_{x}=\frac{\left( { Pixel }_{x}&#43;0.5\right)}{ { ImageWidth }} $$ $$ { PixelNDC }_{y}=\frac{\left( { Pixel }_{y}&#43;0." />
+  <meta name="description" content="作业描述 在光线追踪中最重要的操作之一就是找到光线与物体的交点。一旦找到光线与物体的交点，就可以执行着色并返回像素颜色。在这次作业中，需要实现两个部分：光线的生成和光线与三角的相交。
+本次代码框架的工作流程为：
+ 从 main 函数开始。定义场景的参数，添加物体（球体或三角形）到场景中，并设置其材质，然后将光源添加到场景中。 调用 Render(scene) 函数。在遍历所有像素的循环里，生成对应的光线并将返回的颜色保存在帧缓冲区（framebuffer）中。在渲染过程结束后，帧缓冲区中的信息将被保存为图像。 在生成像素对应的光线后，调用 CastRay 函数，该函数调用 trace 来查询光线与场景中最近的对象的交点。 然后，在此交点执行着色。此处设置了三种不同的着色情况，并且框架已经提供了代码。  需要修改的函数是：
+ Renderer.cpp 中的 Render()：这里需要为每个像素生成一条对应的光线，然后调用函数 castRay() 来得到颜色，最后将颜色存储在帧缓冲区的相应像素中。 Triangle.hpp 中的 rayTriangleIntersect(): v0, v1, v2 是三角形的三个顶点，orig 是光线的起点，dir 是光线单位化的方向向量。tnear, u, v 是需要使用课上推导的 Moller-Trumbore 算法来更新的参数。  解题思路 首先要实现一条从摄像机出发的光线（primar ray），根据此文Ray-Tracing: Generating Camera Rays和作业框架可以得到以下推理过程：
+  按照惯例，平面通常放置在距离相机原点1个单位的位置，且相机看向-Z轴。
+  代码框架中的i、j是raster space下的x、y坐标（以左上角为原点），需要对它们&#43;0.5得到像素中心。为了使之参与计算，需要转换成world space。具体流程如下：
+  将raster space下的像素坐标压缩至[0, 1]，转换为NDC space（Normalized Device Coordinates）。
+$$ { PixelNDC }_{x}=\frac{\left( { Pixel }_{x}&#43;0.5\right)}{ { ImageWidth }} $$ $$ { PixelNDC }_{y}=\frac{\left( { Pixel }_{y}&#43;0." />
+  <meta property="og:locale" content="en-us" /><meta property="og:image" content="/icon.png" />
+  
+
+  
+    <style>body{font-family:bree serif,sans-serif;-webkit-font-smoothing:antialiased;margin:0 20px}article{max-width:800px;margin-left:auto;margin-right:auto}a{color:#000;text-decoration:none}a:hover{font-weight:600;text-decoration:underline}.post-ads{margin:50px 0}.markdown-body{font-size:18px;max-width:100%}.markdown-body a{text-decoration:underline;text-decoration-color:#000}.markdown-body blockquote{margin:0;padding:0 1em;color:#57606a;border-left:.25em solid #d0d7de}.markdown-body pre{padding:16px;overflow:auto;border-radius:10px}.markdown-body code{padding:.2em .4em;font-size:85%;background-color:#f6f8fa;border-radius:6px}.markdown-body pre>code{padding:0;font-size:100%;background-color:inherit;border:0}.Chinese .markdown-body{line-height:200%}.site-date-catalog{font-size:2rem}.header-title{font-size:2rem;font-weight:700;margin-top:32px;font-family:bungee shade,sans-serif}.header-title a{text-decoration:none}.header-subtitle{color:#666}.header-items{margin:10px 0}.header-item{margin:0 5px}.header-line{width:100%;border-width:2px;border-color:#482936;border-style:solid none none none}.lang-switch{font-weight:600}#posts-list{min-height:600px}.posts-line{font-size:1.2rem;margin:12px 0}.posts-categories{font-size:.8rem;margin:auto;text-align:center}.posts-category{padding:3px 0;border:#000 2px solid;border-radius:5px}.site-footer{margin-top:50px;margin-bottom:50px;display:flex;justify-content:flex-end;flex-wrap:wrap;padding:12px 0;border-width:3px;border-style:dashed none none none;border-color:#000}.site-footer-item{margin-right:12px}.post-content img{display:block;margin:1rem auto;max-width:100%;margin-top:12px}.post-header{margin-bottom:50px}.post-title{font-size:2rem;font-weight:600}.post-tags{display:inline;font-weight:600;padding:2px 5px;margin-right:6px;border:#000 2px solid;border-radius:5px}.post-date{font-weight:800;font-style:italic}.post-author{float:right;font-weight:600}.page-content{min-height:60%}.post-content{margin-bottom:50px}.post-content p{hyphens:auto;line-height:1.8;text-justify:ideographic;margin-bottom:1em}.related-content{border-width:3px;border-style:solid;border-color:#000;padding:0 10px;margin-bottom:50px;margin-top:100px}.related-content li{margin:5px 0}.taxonomy-term{font-size:3rem}.gallery-img{text-align:center}.gallery-img span{text-align:center}.gallery-img-desc{font-size:.8em;font-weight:800}#disqus_thread{position:relative}#disqus_thread:after{content:"";display:block;height:55px;width:100%;position:absolute;bottom:0;background:#fff}@media screen and (max-width:600px){.header-title,.header-subtitle,.header-items{text-align:center}.posts-line{font-size:16px}.markdown-body{font-size:16px}.post-title{font-size:2rem}.post-content p{letter-spacing:.05em}}@media screen and (max-width:48em){.posts-category{display:none}}</style>
+  
+  
+    <style>.container,.container-fluid{margin-right:auto;margin-left:auto}.container-fluid{padding-right:2rem;padding-left:2rem}.row{box-sizing:border-box;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-flex:0;-ms-flex:0 1 auto;flex:initial;-webkit-box-orient:horizontal;-webkit-box-direction:normal;-ms-flex-direction:row;flex-direction:row;-ms-flex-wrap:wrap;flex-wrap:wrap;margin-right:-.5rem;margin-left:-.5rem}.row.reverse{-webkit-box-orient:horizontal;-webkit-box-direction:reverse;-ms-flex-direction:row-reverse;flex-direction:row-reverse}.col.reverse{-webkit-box-orient:vertical;-webkit-box-direction:reverse;-ms-flex-direction:column-reverse;flex-direction:column-reverse}.col-xs,.col-xs-1,.col-xs-10,.col-xs-11,.col-xs-12,.col-xs-2,.col-xs-3,.col-xs-4,.col-xs-5,.col-xs-6,.col-xs-7,.col-xs-8,.col-xs-9,.col-xs-offset-0,.col-xs-offset-1,.col-xs-offset-10,.col-xs-offset-11,.col-xs-offset-12,.col-xs-offset-2,.col-xs-offset-3,.col-xs-offset-4,.col-xs-offset-5,.col-xs-offset-6,.col-xs-offset-7,.col-xs-offset-8,.col-xs-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-xs{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-xs-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-xs-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-xs-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-xs-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-xs-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-xs-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-xs-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-xs-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-xs-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-xs-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-xs-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-xs-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-xs-offset-0{margin-left:0}.col-xs-offset-1{margin-left:8.33333333%}.col-xs-offset-2{margin-left:16.66666667%}.col-xs-offset-3{margin-left:25%}.col-xs-offset-4{margin-left:33.33333333%}.col-xs-offset-5{margin-left:41.66666667%}.col-xs-offset-6{margin-left:50%}.col-xs-offset-7{margin-left:58.33333333%}.col-xs-offset-8{margin-left:66.66666667%}.col-xs-offset-9{margin-left:75%}.col-xs-offset-10{margin-left:83.33333333%}.col-xs-offset-11{margin-left:91.66666667%}.start-xs{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-xs{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-xs{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-xs{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-xs{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-xs{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-xs{-ms-flex-pack:distribute;justify-content:space-around}.between-xs{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-xs{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-xs{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}@media only screen and (min-width:48em){.container{width:49rem}.col-sm,.col-sm-1,.col-sm-10,.col-sm-11,.col-sm-12,.col-sm-2,.col-sm-3,.col-sm-4,.col-sm-5,.col-sm-6,.col-sm-7,.col-sm-8,.col-sm-9,.col-sm-offset-0,.col-sm-offset-1,.col-sm-offset-10,.col-sm-offset-11,.col-sm-offset-12,.col-sm-offset-2,.col-sm-offset-3,.col-sm-offset-4,.col-sm-offset-5,.col-sm-offset-6,.col-sm-offset-7,.col-sm-offset-8,.col-sm-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-sm{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-sm-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-sm-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-sm-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-sm-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-sm-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-sm-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-sm-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-sm-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-sm-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-sm-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-sm-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-sm-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-sm-offset-0{margin-left:0}.col-sm-offset-1{margin-left:8.33333333%}.col-sm-offset-2{margin-left:16.66666667%}.col-sm-offset-3{margin-left:25%}.col-sm-offset-4{margin-left:33.33333333%}.col-sm-offset-5{margin-left:41.66666667%}.col-sm-offset-6{margin-left:50%}.col-sm-offset-7{margin-left:58.33333333%}.col-sm-offset-8{margin-left:66.66666667%}.col-sm-offset-9{margin-left:75%}.col-sm-offset-10{margin-left:83.33333333%}.col-sm-offset-11{margin-left:91.66666667%}.start-sm{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-sm{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-sm{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-sm{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-sm{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-sm{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-sm{-ms-flex-pack:distribute;justify-content:space-around}.between-sm{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-sm{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-sm{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}}@media only screen and (min-width:64em){.container{width:65rem}.col-md,.col-md-1,.col-md-10,.col-md-11,.col-md-12,.col-md-2,.col-md-3,.col-md-4,.col-md-5,.col-md-6,.col-md-7,.col-md-8,.col-md-9,.col-md-offset-0,.col-md-offset-1,.col-md-offset-10,.col-md-offset-11,.col-md-offset-12,.col-md-offset-2,.col-md-offset-3,.col-md-offset-4,.col-md-offset-5,.col-md-offset-6,.col-md-offset-7,.col-md-offset-8,.col-md-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-md{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-md-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-md-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-md-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-md-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-md-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-md-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-md-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-md-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-md-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-md-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-md-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-md-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-md-offset-0{margin-left:0}.col-md-offset-1{margin-left:8.33333333%}.col-md-offset-2{margin-left:16.66666667%}.col-md-offset-3{margin-left:25%}.col-md-offset-4{margin-left:33.33333333%}.col-md-offset-5{margin-left:41.66666667%}.col-md-offset-6{margin-left:50%}.col-md-offset-7{margin-left:58.33333333%}.col-md-offset-8{margin-left:66.66666667%}.col-md-offset-9{margin-left:75%}.col-md-offset-10{margin-left:83.33333333%}.col-md-offset-11{margin-left:91.66666667%}.start-md{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-md{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-md{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-md{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-md{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-md{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-md{-ms-flex-pack:distribute;justify-content:space-around}.between-md{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-md{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-md{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}}@media only screen and (min-width:75em){.container{width:76rem}.col-lg,.col-lg-1,.col-lg-10,.col-lg-11,.col-lg-12,.col-lg-2,.col-lg-3,.col-lg-4,.col-lg-5,.col-lg-6,.col-lg-7,.col-lg-8,.col-lg-9,.col-lg-offset-0,.col-lg-offset-1,.col-lg-offset-10,.col-lg-offset-11,.col-lg-offset-12,.col-lg-offset-2,.col-lg-offset-3,.col-lg-offset-4,.col-lg-offset-5,.col-lg-offset-6,.col-lg-offset-7,.col-lg-offset-8,.col-lg-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-lg{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-lg-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-lg-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-lg-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-lg-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-lg-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-lg-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-lg-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-lg-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-lg-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-lg-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-lg-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-lg-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-lg-offset-0{margin-left:0}.col-lg-offset-1{margin-left:8.33333333%}.col-lg-offset-2{margin-left:16.66666667%}.col-lg-offset-3{margin-left:25%}.col-lg-offset-4{margin-left:33.33333333%}.col-lg-offset-5{margin-left:41.66666667%}.col-lg-offset-6{margin-left:50%}.col-lg-offset-7{margin-left:58.33333333%}.col-lg-offset-8{margin-left:66.66666667%}.col-lg-offset-9{margin-left:75%}.col-lg-offset-10{margin-left:83.33333333%}.col-lg-offset-11{margin-left:91.66666667%}.start-lg{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-lg{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-lg{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-lg{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-lg{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-lg{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-lg{-ms-flex-pack:distribute;justify-content:space-around}.between-lg{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-lg{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-lg{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}}</style>
+  
+
+  
+
+  <link href="/index.xml" rel="alternate" type="application/rss+xml"
+    title="Wong Der Land">
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css?family=Bree+Serif|Bungee+Shade" rel="stylesheet">
+  
+  
+  
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [["$", "$"]],
+    },
+    displayMath: [
+      ["$$", "$$"],
+      ["\[\[", "\]\]"],
+    ],
+    svg: {
+      fontCache: "global",
+    },
+  };
+</script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script
+  id="MathJax-script"
+  async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+></script>
+
+
+  
+  
+</head>
+
+
+<body>
+    <article class="post " id="article">
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="site-header">
+                    
+<header>
+  <div class="header-title">
+    <a href="/"
+      >Wong Der Land</a
+    >
+  </div>
+  <div class="header-subtitle">READ ONLY</div>
+</header>
+<div class="row end-md center-xs header-items">
+  
+  <div class="header-item">
+    <a href="/categories/life" target="_blank">Life</a>
+  </div>
+  
+  <div class="header-item">
+    <a href="/categories/game" target="_blank">Game</a>
+  </div>
+  
+  <div class="header-item">
+    <a href="/categories/art" target="_blank">Art</a>
+  </div>
+  
+  <div class="header-item">
+    <a href="/categories/drama" target="_blank">Drama</a>
+  </div>
+  
+  <div class="header-item">
+    <a href="/categories/tech" target="_blank">Tech</a>
+  </div>
+  
+</div>
+<div class="row end-xs">
+   
+</div>
+<div class="header-line"></div>
+
+                </div>
+                <header class="post-header">
+                    <h1 class="post-title">GAMES101作业本——作业5：光线与三角形相交</h1>
+                    
+                    <div class="row post-desc">
+                        <div class="col-xs-6">
+                            
+                            <time class="post-date" datetime=" 2022-12-13 00:00:00 UTC">
+                                13 Dec 2022
+                            </time>
+                            
+                        </div>
+                        <div class="col-xs-6">
+                            
+                            <div class="post-author">
+                                
+                                
+                                
+                                Sylvia Wong
+                            </div>
+                            
+                        </div>
+                    </div>
+                    
+                </header>
+
+                <div class="post-content markdown-body">
+                    
+                    <h2 id="作业描述">作业描述</h2>
+<p>在光线追踪中最重要的操作之一就是找到光线与物体的交点。一旦找到光线与物体的交点，就可以执行着色并返回像素颜色。在这次作业中，需要实现两个部分：光线的生成和光线与三角的相交。</p>
+<p>本次代码框架的工作流程为：</p>
+<ol>
+<li>从 main 函数开始。定义场景的参数，添加物体（球体或三角形）到场景中，并设置其材质，然后将光源添加到场景中。</li>
+<li>调用 Render(scene) 函数。在遍历所有像素的循环里，生成对应的光线并将返回的颜色保存在帧缓冲区（framebuffer）中。在渲染过程结束后，帧缓冲区中的信息将被保存为图像。</li>
+<li>在生成像素对应的光线后，调用 CastRay 函数，该函数调用 trace 来查询光线与场景中最近的对象的交点。</li>
+<li>然后，在此交点执行着色。此处设置了三种不同的着色情况，并且框架已经提供了代码。</li>
+</ol>
+<p>需要修改的函数是：</p>
+<ul>
+<li>Renderer.cpp 中的 Render()：这里需要为每个像素生成一条对应的光线，然后调用函数 castRay() 来得到颜色，最后将颜色存储在帧缓冲区的相应像素中。</li>
+<li>Triangle.hpp 中的 rayTriangleIntersect(): v0, v1, v2 是三角形的三个顶点，orig 是光线的起点，dir 是光线单位化的方向向量。tnear, u, v 是需要使用课上推导的 Moller-Trumbore 算法来更新的参数。</li>
+</ul>
+<h2 id="解题思路">解题思路</h2>
+<p>首先要实现一条从摄像机出发的光线（primar ray），根据此文<a href="https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-generating-camera-rays/generating-camera-rays">Ray-Tracing: Generating Camera Rays</a>和作业框架可以得到以下推理过程：</p>
+<ul>
+<li>
+<p>按照惯例，平面通常放置在距离相机原点1个单位的位置，且相机看向-Z轴。</p>
+</li>
+<li>
+<p>代码框架中的i、j是<strong>raster space</strong>下的x、y坐标（以左上角为原点），需要对它们+0.5得到像素中心。为了使之参与计算，需要转换成<strong>world space</strong>。具体流程如下：</p>
+<ul>
+<li>
+<p>将<strong>raster space</strong>下的像素坐标压缩至[0, 1]，转换为<strong>NDC space</strong>（Normalized Device Coordinates）。</p>
+<div>$$
+    { PixelNDC }_{x}=\frac{\left( { Pixel }_{x}+0.5\right)}{ { ImageWidth }}
+$$</div>
+<div>$$
+    { PixelNDC }_{y}=\frac{\left( { Pixel }_{y}+0.5\right)}{ { ImageHeight }}
+$$</div>
+</li>
+<li>
+<p>将得到的坐标变换成<strong>screen space</strong>下的坐标（范围是[-1, 1]，此处y轴需要反向）。</p>
+<div>$$
+     { PixelScreen }_{x}=2 *  { PixelNDC }_{x}-1
+$$</div>
+ <div>$$
+     { PixelScreen }_{y}=1 - 2 *  { PixelNDC }_{y}
+$$</div>
+<p><img src="/img/games101_hw_5/1.png" alt="1"></p>
+</li>
+<li>
+<p>为了保持像素比例，需要计算出屏幕宽高比并变换。</p>
+<div>$$
+    { ImageAspectRatio }=\frac{ { ImageWidth }}{ { ImageHeight }}  {, } \\
+$$</div>
+<div>$$
+    { PixelCamera }_{x}=\left(2 *  { PixelScreen }_{x}-1\right) *{ ImageAspectRatio, }\\
+$$</div>
+<div>$$
+    { PixelCamera }_{y}=\left(1-2*  { PixelScreen }_{y}\right)  {. } \\
+$$</div>
+<p><img src="/img/games101_hw_5/2.png" alt="2"></p>
+</li>
+<li>
+<p>为了得出<strong>camera space</strong>下的坐标需要加上视角信息。从作业框架中得知AB长度为1，那么缩放scale等于BC的长度，易得：</p>
+<div>$$
+    \| B C\|=\tan \left(\frac{\alpha}{2}\right) \\
+$$</div>
+<div>$$
+      { PixelCamera }_{x}=\left(2 *  { PixelScreen }_{x}-1\right) *{ ImageAspectRatio }* { tan }\left(\frac{\alpha}{2}\right) \\
+$$</div>
+<div>$$
+     { PixelCamera }_{y}=\left(1-2 *  { PixelScreen }_{y}\right) * \tan \left(\frac{\alpha}{2}\right)  \\
+$$</div>
+<div>$$
+     P_{ {cameraspace }}=\left( { PixelCamera }_{x},  { PixelCamera }_{y},-1\right)
+$$</div>
+<p><img src="/img/games101_hw_5/3.png" alt="3"></p>
+</li>
+<li>
+<p>因为作业里的相机在坐标系原点，经过以上步骤便可以得出射线。若将相机移动到其他地方，则需要使用<strong>camera-to-world matrix</strong>计算出变换后的射线。</p>
+<p><img src="/img/games101_hw_5/4.png" alt="4"></p>
+</li>
+</ul>
+</li>
+</ul>
+<p>接着要将射线与三角形求交，使用课上推导的Möller–Trumbore 算法即可。注意代码框架中tnear、u、v分别对应t、b1、b2。</p>
+<p><img src="/img/games101_hw_5/5.png" alt="5"></p>
+<h2 id="代码实现">代码实现</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-c++" data-lang="c++"><span style="display:flex;"><span><span style="color:#6272a4">// [comment]
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4">// The main render function. This where we iterate over all pixels in the image, generate
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4">// primary rays and cast these rays into the scene. The content of the framebuffer is
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4">// saved to a file.
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4">// [/comment]
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span><span style="color:#8be9fd">void</span> Renderer<span style="color:#ff79c6">::</span>Render(<span style="color:#ff79c6">const</span> Scene<span style="color:#ff79c6">&amp;</span> scene) {
+</span></span><span style="display:flex;"><span>    std<span style="color:#ff79c6">::</span>vector<span style="color:#ff79c6">&lt;</span>Vector3f<span style="color:#ff79c6">&gt;</span> framebuffer(scene.width <span style="color:#ff79c6">*</span> scene.height);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> scale <span style="color:#ff79c6">=</span> std<span style="color:#ff79c6">::</span>tan(deg2rad(scene.fov <span style="color:#ff79c6">*</span> <span style="color:#bd93f9">0.5f</span>));
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> imageAspectRatio <span style="color:#ff79c6">=</span> scene.width <span style="color:#ff79c6">/</span> (<span style="color:#8be9fd">float</span>)scene.height;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#6272a4">// Use this variable as the eye position to start your rays.
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#6272a4">// 摄像机位置在原点，看向-z方向
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    Vector3f <span style="color:#50fa7b">eye_pos</span>(<span style="color:#bd93f9">0</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">int</span> m <span style="color:#ff79c6">=</span> <span style="color:#bd93f9">0</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">for</span> (<span style="color:#8be9fd">int</span> j <span style="color:#ff79c6">=</span> <span style="color:#bd93f9">0</span>; j <span style="color:#ff79c6">&lt;</span> scene.height; <span style="color:#ff79c6">++</span>j) {
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">for</span> (<span style="color:#8be9fd">int</span> i <span style="color:#ff79c6">=</span> <span style="color:#bd93f9">0</span>; i <span style="color:#ff79c6">&lt;</span> scene.width; <span style="color:#ff79c6">++</span>i) {
+</span></span><span style="display:flex;"><span>            <span style="color:#6272a4">// generate primary ray direction
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>            <span style="color:#8be9fd">float</span> x;
+</span></span><span style="display:flex;"><span>            <span style="color:#8be9fd">float</span> y;
+</span></span><span style="display:flex;"><span>            <span style="color:#6272a4">// DONE: Find the x and y positions of the current pixel to get the direction
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>            <span style="color:#6272a4">// vector that passes through it.
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>            <span style="color:#6272a4">// Also, don&#39;t forget to multiply both of them with the variable *scale*, and
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>            <span style="color:#6272a4">// x (horizontal) variable with the *imageAspectRatio*   
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>            x <span style="color:#ff79c6">=</span> (<span style="color:#bd93f9">2</span> <span style="color:#ff79c6">*</span> ((i <span style="color:#ff79c6">+</span> <span style="color:#bd93f9">0.5</span>) <span style="color:#ff79c6">/</span> scene.width) <span style="color:#ff79c6">-</span> <span style="color:#bd93f9">1</span>) <span style="color:#ff79c6">*</span> imageAspectRatio <span style="color:#ff79c6">*</span> scale;
+</span></span><span style="display:flex;"><span>            y <span style="color:#ff79c6">=</span> (<span style="color:#bd93f9">1</span> <span style="color:#ff79c6">-</span> <span style="color:#bd93f9">2</span> <span style="color:#ff79c6">*</span> ((j <span style="color:#ff79c6">+</span> <span style="color:#bd93f9">0.5</span>) <span style="color:#ff79c6">/</span> scene.height)) <span style="color:#ff79c6">*</span> scale;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            Vector3f dir <span style="color:#ff79c6">=</span> Vector3f(x, y, <span style="color:#ff79c6">-</span><span style="color:#bd93f9">1</span>); <span style="color:#6272a4">// Don&#39;t forget to normalize this direction!
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>            dir <span style="color:#ff79c6">=</span> normalize(dir);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            framebuffer[m<span style="color:#ff79c6">++</span>] <span style="color:#ff79c6">=</span> castRay(eye_pos, dir, scene, <span style="color:#bd93f9">0</span>);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        UpdateProgress(j <span style="color:#ff79c6">/</span> (<span style="color:#8be9fd">float</span>)scene.height);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#6272a4">// save framebuffer to file
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    FILE<span style="color:#ff79c6">*</span> fp <span style="color:#ff79c6">=</span> fopen(<span style="color:#f1fa8c">&#34;binary.ppm&#34;</span>, <span style="color:#f1fa8c">&#34;wb&#34;</span>);
+</span></span><span style="display:flex;"><span>    (<span style="color:#8be9fd">void</span>)fprintf(fp, <span style="color:#f1fa8c">&#34;P6</span><span style="color:#f1fa8c">\n</span><span style="color:#f1fa8c">%d %d</span><span style="color:#f1fa8c">\n</span><span style="color:#f1fa8c">255</span><span style="color:#f1fa8c">\n</span><span style="color:#f1fa8c">&#34;</span>, scene.width, scene.height);
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">for</span> (<span style="color:#ff79c6">auto</span> i <span style="color:#ff79c6">=</span> <span style="color:#bd93f9">0</span>; i <span style="color:#ff79c6">&lt;</span> scene.height <span style="color:#ff79c6">*</span> scene.width; <span style="color:#ff79c6">++</span>i) {
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">static</span> <span style="color:#8be9fd">unsigned</span> <span style="color:#8be9fd">char</span> color[<span style="color:#bd93f9">3</span>];
+</span></span><span style="display:flex;"><span>        color[<span style="color:#bd93f9">0</span>] <span style="color:#ff79c6">=</span> (<span style="color:#8be9fd">unsigned</span> <span style="color:#8be9fd">char</span>)(<span style="color:#bd93f9">255</span> <span style="color:#ff79c6">*</span> clamp(<span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">1</span>, framebuffer[i].x));
+</span></span><span style="display:flex;"><span>        color[<span style="color:#bd93f9">1</span>] <span style="color:#ff79c6">=</span> (<span style="color:#8be9fd">unsigned</span> <span style="color:#8be9fd">char</span>)(<span style="color:#bd93f9">255</span> <span style="color:#ff79c6">*</span> clamp(<span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">1</span>, framebuffer[i].y));
+</span></span><span style="display:flex;"><span>        color[<span style="color:#bd93f9">2</span>] <span style="color:#ff79c6">=</span> (<span style="color:#8be9fd">unsigned</span> <span style="color:#8be9fd">char</span>)(<span style="color:#bd93f9">255</span> <span style="color:#ff79c6">*</span> clamp(<span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">1</span>, framebuffer[i].z));
+</span></span><span style="display:flex;"><span>        fwrite(color, <span style="color:#bd93f9">1</span>, <span style="color:#bd93f9">3</span>, fp);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    fclose(fp);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-c++" data-lang="c++"><span style="display:flex;"><span><span style="color:#8be9fd">bool</span> <span style="color:#50fa7b">rayTriangleIntersect</span>(<span style="color:#ff79c6">const</span> Vector3f<span style="color:#ff79c6">&amp;</span> v0, <span style="color:#ff79c6">const</span> Vector3f<span style="color:#ff79c6">&amp;</span> v1, <span style="color:#ff79c6">const</span> Vector3f<span style="color:#ff79c6">&amp;</span> v2, <span style="color:#ff79c6">const</span> Vector3f<span style="color:#ff79c6">&amp;</span> orig,
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">const</span> Vector3f<span style="color:#ff79c6">&amp;</span> dir, <span style="color:#8be9fd">float</span><span style="color:#ff79c6">&amp;</span> tnear, <span style="color:#8be9fd">float</span><span style="color:#ff79c6">&amp;</span> u, <span style="color:#8be9fd">float</span><span style="color:#ff79c6">&amp;</span> v) {
+</span></span><span style="display:flex;"><span>    <span style="color:#6272a4">// DONE: Implement this function that tests whether the triangle
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#6272a4">// that&#39;s specified bt v0, v1 and v2 intersects with the ray (whose
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#6272a4">// origin is *orig* and direction is *dir*)
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#6272a4">// Also don&#39;t forget to update tnear, u and v.
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>
+</span></span><span style="display:flex;"><span>    Vector3f E1 <span style="color:#ff79c6">=</span> v1 <span style="color:#ff79c6">-</span> v0;
+</span></span><span style="display:flex;"><span>    Vector3f E2 <span style="color:#ff79c6">=</span> v2 <span style="color:#ff79c6">-</span> v0;
+</span></span><span style="display:flex;"><span>    Vector3f S <span style="color:#ff79c6">=</span> orig <span style="color:#ff79c6">-</span> v0;
+</span></span><span style="display:flex;"><span>    Vector3f S1 <span style="color:#ff79c6">=</span> crossProduct(dir, E2);
+</span></span><span style="display:flex;"><span>    Vector3f S2 <span style="color:#ff79c6">=</span> crossProduct(S, E1);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> S1_dot_E1 <span style="color:#ff79c6">=</span> dotProduct(S1, E1);
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> t <span style="color:#ff79c6">=</span> dotProduct(S2, E2) <span style="color:#ff79c6">/</span> S1_dot_E1;
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> b1 <span style="color:#ff79c6">=</span> dotProduct(S1, S) <span style="color:#ff79c6">/</span> S1_dot_E1;
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> b2 <span style="color:#ff79c6">=</span> dotProduct(S2, dir) <span style="color:#ff79c6">/</span> S1_dot_E1;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> eps <span style="color:#ff79c6">=</span> <span style="color:#ff79c6">-</span><span style="color:#bd93f9">0.00001</span>;  <span style="color:#6272a4">// 避免精度问题造成地板对角线蓝点
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">if</span> (t <span style="color:#ff79c6">&gt;=</span> <span style="color:#bd93f9">0.0</span> <span style="color:#ff79c6">&amp;&amp;</span> b1 <span style="color:#ff79c6">&gt;=</span> eps <span style="color:#ff79c6">&amp;&amp;</span> b2 <span style="color:#ff79c6">&gt;=</span> eps <span style="color:#ff79c6">&amp;&amp;</span> (<span style="color:#bd93f9">1</span> <span style="color:#ff79c6">-</span> b1 <span style="color:#ff79c6">-</span> b2) <span style="color:#ff79c6">&gt;=</span> eps) {
+</span></span><span style="display:flex;"><span>        tnear <span style="color:#ff79c6">=</span> t;
+</span></span><span style="display:flex;"><span>        u <span style="color:#ff79c6">=</span> b1;
+</span></span><span style="display:flex;"><span>        v <span style="color:#ff79c6">=</span> b2;
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">return</span> <span style="color:#8be9fd;font-style:italic">true</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">return</span> <span style="color:#8be9fd;font-style:italic">false</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>渲染效果：
+<img src="/img/games101_hw_5/6.png" alt="6"></p>
+
+                </div>
+
+                <div class="row middle-xs">
+                    <div class="col-xs-12">
+                        Tags:
+                        
+                        <div class="post-tags">
+                            <a href="/tags/%E6%8A%80%E6%9C%AF%E6%9D%82%E8%B0%88/">
+                                技术杂谈
+                            </a>
+                        </div>
+                        
+                        <div class="post-tags">
+                            <a href="/tags/games101/">
+                                GAMES101
+                            </a>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+                <div class="row">
+                    
+                    <div class="col-xs-12"><br><br>
+                        
+                        <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img
+                                alt="Creative Commons License" style="border-width:0"
+                                src="/img/cc.png" class="loading"
+                                data-was-processed="true"></a>
+                    </div>
+                </div>
+
+                
+
+<div class="related-content">
+  <h3>Related Posts</h3>
+  <ul>
+    
+    <li><a href="/2022/12/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A4b%C3%A9zier-%E6%9B%B2%E7%BA%BF/">GAMES101作业本——作业4：Bézier 曲线</a></li>
+    
+    <li><a href="/2022/12/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A3pipeline-and-shading/">GAMES101作业本——作业3：Pipeline and Shading</a></li>
+    
+    <li><a href="/2022/11/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A2triangles-and-z-buffering/">GAMES101作业本——作业2：Triangles and Z-buffering</a></li>
+    
+  </ul>
+</div>
+
+
+
+                
+                
+                <div style="height: 50px;"></div>
+                
+                
+
+                <div class="site-footer">
+  
+  <div class="site-footer-item">
+    <a href="https://github.com/jiuyuezai" target="_blank">GitHub</a>
+  </div>
+  
+  <div class="site-footer-item">
+    <a href="https://www.zhihu.com/people/jiuyuezai" target="_blank">Zhihu</a>
+  </div>
+  
+</div>
+
+            </div>
+        </div>
+    </article>
+
+    
+<script src="/js/lazyload.min.js"></script>
+<script>
+  var lazyImage = new LazyLoad({
+    container: document.getElementById('article')
+  });
+</script>
+
+<script>
+  
+  
+    
+    
+  
+</script>
+
+    
+
+</body>
+
+</html>
