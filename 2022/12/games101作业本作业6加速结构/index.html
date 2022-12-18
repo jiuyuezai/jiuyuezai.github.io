@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="Hugo 0.94.2" />
+
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="Sylvia Wong" />
+  <meta property="og:url" content="https://jiuyuezai.github.io/2022/12/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A6%E5%8A%A0%E9%80%9F%E7%BB%93%E6%9E%84/" />
+  <link rel="canonical" href="https://jiuyuezai.github.io/2022/12/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A6%E5%8A%A0%E9%80%9F%E7%BB%93%E6%9E%84/" /><link rel="apple-touch-icon" href="/icon.png" />
+  <link rel="icon" href="/icon.png" />
+  <link rel="shortcut" href="/icon.png" /><link rel="alternate" type="application/atom+xml" href="https://jiuyuezai.github.io/index.xml" title="Wong Der Land">
+
+  <script type="application/ld+json">
+  {
+      "@context" : "http://schema.org",
+      "@type" : "BlogPosting",
+      "mainEntityOfPage": {
+           "@type": "WebPage",
+           "@id": "https:\/\/jiuyuezai.github.io\/"
+      },
+      "articleSection" : "posts",
+      "name" : "GAMES101作业本——作业6：加速结构",
+      "headline" : "GAMES101作业本——作业6：加速结构",
+      "description" : "作业描述 在之前的编程练习中实现了基础的光线追踪算法，具体而言是光线传输、光线与三角形求交。采用了这样的方法寻找光线与场景的交点：遍历场景中的所有物体，判断光线是否与它相交。在场景中的物体数量不大时，该做法可以取得良好的结果，但当物体数量增多、模型变得更加复杂，该做法将会变得非常低效。因此，需要加速结构来加速求交过程。在本次练习中，重点关注物体划分算法 Bounding Volume Hierarchy (BVH)。本练习要求实现 Ray-Bounding Volume 求交与 BVH 查找。\n首先，需要从上一次编程练习中引用以下函数：\n Render() in Renderer.cpp: 将光线生成过程粘贴到此处，并且按照新框架更新相应调用的格式。 Triangle::getIntersection in Triangle.hpp: 将光线-三角形相交函数粘贴到此处，并且按照新框架更新相应相交信息的格式。  在本次编程练习中，需要实现以下函数：\n IntersectP(const Ray\u0026amp; ray, const Vector3f\u0026amp; invDir, const std::array\u0026amp; dirIsNeg) in the Bounds3.hpp: 这个函数的作用是判断包围盒 BoundingBox 与光线是否相交，需要按照课程介绍的算法实现求交过程。 getIntersection(BVHBuildNode node, const Ray ray)* in BVH.cpp: 建立 BVH 之后，我们可以用它加速求交过程。该过程递归进行，将在其中调用你实现的 Bounds3::IntersectP.  附加题：\n SAH 查找：自学 SAH(Surface Area Heuristic) , 正 确实现 SAH 加速，并对比 BVH、SVH 的时间开销。(可参考 http:\/\/15462.courses.cs.cmu.edu\/fall2015\/lecture\/acceleration\/slide_024，也可以查找其他资料)  解题思路 1 修改Render()函数 作业框架发生了一些改变，根据数据类型的变化做一些相应的调整。eyepos 的位置在(-1, 5, 10)，屏幕的中心坐标就不在 (0,0,-1)了，而是位于 (-1,5,9)。但射线方向其实与作业5求法相同。",
+      "inLanguage" : "en-US",
+      "author" : "Sylvia Wong",
+      "creator" : "Sylvia Wong",
+      "publisher": "Sylvia Wong",
+      "accountablePerson" : "Sylvia Wong",
+      "copyrightHolder" : "Sylvia Wong",
+      "copyrightYear" : "2022",
+      "datePublished": "2022-12-18 00:00:00 \u002b0000 UTC",
+      "dateModified" : "2022-12-18 00:00:00 \u002b0000 UTC",
+      "url" : "https:\/\/jiuyuezai.github.io\/2022\/12\/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A6%E5%8A%A0%E9%80%9F%E7%BB%93%E6%9E%84\/",
+      "keywords" : [ "技术杂谈","GAMES101", ]
+  }
+</script>
+<title>GAMES101作业本——作业6：加速结构</title>
+  <meta property="og:title" content="GAMES101作业本——作业6：加速结构" />
+  <meta property="og:type" content="article" />
+  <meta property="og:description" content="作业描述 在之前的编程练习中实现了基础的光线追踪算法，具体而言是光线传输、光线与三角形求交。采用了这样的方法寻找光线与场景的交点：遍历场景中的所有物体，判断光线是否与它相交。在场景中的物体数量不大时，该做法可以取得良好的结果，但当物体数量增多、模型变得更加复杂，该做法将会变得非常低效。因此，需要加速结构来加速求交过程。在本次练习中，重点关注物体划分算法 Bounding Volume Hierarchy (BVH)。本练习要求实现 Ray-Bounding Volume 求交与 BVH 查找。
+首先，需要从上一次编程练习中引用以下函数：
+ Render() in Renderer.cpp: 将光线生成过程粘贴到此处，并且按照新框架更新相应调用的格式。 Triangle::getIntersection in Triangle.hpp: 将光线-三角形相交函数粘贴到此处，并且按照新框架更新相应相交信息的格式。  在本次编程练习中，需要实现以下函数：
+ IntersectP(const Ray&amp;amp; ray, const Vector3f&amp;amp; invDir, const std::array&amp;amp; dirIsNeg) in the Bounds3.hpp: 这个函数的作用是判断包围盒 BoundingBox 与光线是否相交，需要按照课程介绍的算法实现求交过程。 getIntersection(BVHBuildNode node, const Ray ray)* in BVH.cpp: 建立 BVH 之后，我们可以用它加速求交过程。该过程递归进行，将在其中调用你实现的 Bounds3::IntersectP.  附加题：
+ SAH 查找：自学 SAH(Surface Area Heuristic) , 正 确实现 SAH 加速，并对比 BVH、SVH 的时间开销。(可参考 http://15462.courses.cs.cmu.edu/fall2015/lecture/acceleration/slide_024，也可以查找其他资料)  解题思路 1 修改Render()函数 作业框架发生了一些改变，根据数据类型的变化做一些相应的调整。eyepos 的位置在(-1, 5, 10)，屏幕的中心坐标就不在 (0,0,-1)了，而是位于 (-1,5,9)。但射线方向其实与作业5求法相同。" />
+  <meta name="description" content="作业描述 在之前的编程练习中实现了基础的光线追踪算法，具体而言是光线传输、光线与三角形求交。采用了这样的方法寻找光线与场景的交点：遍历场景中的所有物体，判断光线是否与它相交。在场景中的物体数量不大时，该做法可以取得良好的结果，但当物体数量增多、模型变得更加复杂，该做法将会变得非常低效。因此，需要加速结构来加速求交过程。在本次练习中，重点关注物体划分算法 Bounding Volume Hierarchy (BVH)。本练习要求实现 Ray-Bounding Volume 求交与 BVH 查找。
+首先，需要从上一次编程练习中引用以下函数：
+ Render() in Renderer.cpp: 将光线生成过程粘贴到此处，并且按照新框架更新相应调用的格式。 Triangle::getIntersection in Triangle.hpp: 将光线-三角形相交函数粘贴到此处，并且按照新框架更新相应相交信息的格式。  在本次编程练习中，需要实现以下函数：
+ IntersectP(const Ray&amp;amp; ray, const Vector3f&amp;amp; invDir, const std::array&amp;amp; dirIsNeg) in the Bounds3.hpp: 这个函数的作用是判断包围盒 BoundingBox 与光线是否相交，需要按照课程介绍的算法实现求交过程。 getIntersection(BVHBuildNode node, const Ray ray)* in BVH.cpp: 建立 BVH 之后，我们可以用它加速求交过程。该过程递归进行，将在其中调用你实现的 Bounds3::IntersectP.  附加题：
+ SAH 查找：自学 SAH(Surface Area Heuristic) , 正 确实现 SAH 加速，并对比 BVH、SVH 的时间开销。(可参考 http://15462.courses.cs.cmu.edu/fall2015/lecture/acceleration/slide_024，也可以查找其他资料)  解题思路 1 修改Render()函数 作业框架发生了一些改变，根据数据类型的变化做一些相应的调整。eyepos 的位置在(-1, 5, 10)，屏幕的中心坐标就不在 (0,0,-1)了，而是位于 (-1,5,9)。但射线方向其实与作业5求法相同。" />
+  <meta property="og:locale" content="en-us" /><meta property="og:image" content="/icon.png" />
+  
+
+  
+    <style>body{font-family:bree serif,sans-serif;-webkit-font-smoothing:antialiased;margin:0 20px}article{max-width:800px;margin-left:auto;margin-right:auto}a{color:#000;text-decoration:none}a:hover{font-weight:600;text-decoration:underline}.post-ads{margin:50px 0}.markdown-body{font-size:18px;max-width:100%}.markdown-body a{text-decoration:underline;text-decoration-color:#000}.markdown-body blockquote{margin:0;padding:0 1em;color:#57606a;border-left:.25em solid #d0d7de}.markdown-body pre{padding:16px;overflow:auto;border-radius:10px}.markdown-body code{padding:.2em .4em;font-size:85%;background-color:#f6f8fa;border-radius:6px}.markdown-body pre>code{padding:0;font-size:100%;background-color:inherit;border:0}.Chinese .markdown-body{line-height:200%}.site-date-catalog{font-size:2rem}.header-title{font-size:2rem;font-weight:700;margin-top:32px;font-family:bungee shade,sans-serif}.header-title a{text-decoration:none}.header-subtitle{color:#666}.header-items{margin:10px 0}.header-item{margin:0 5px}.header-line{width:100%;border-width:2px;border-color:#482936;border-style:solid none none none}.lang-switch{font-weight:600}#posts-list{min-height:600px}.posts-line{font-size:1.2rem;margin:12px 0}.posts-categories{font-size:.8rem;margin:auto;text-align:center}.posts-category{padding:3px 0;border:#000 2px solid;border-radius:5px}.site-footer{margin-top:50px;margin-bottom:50px;display:flex;justify-content:flex-end;flex-wrap:wrap;padding:12px 0;border-width:3px;border-style:dashed none none none;border-color:#000}.site-footer-item{margin-right:12px}.post-content img{display:block;margin:1rem auto;max-width:100%;margin-top:12px}.post-header{margin-bottom:50px}.post-title{font-size:2rem;font-weight:600}.post-tags{display:inline;font-weight:600;padding:2px 5px;margin-right:6px;border:#000 2px solid;border-radius:5px}.post-date{font-weight:800;font-style:italic}.post-author{float:right;font-weight:600}.page-content{min-height:60%}.post-content{margin-bottom:50px}.post-content p{hyphens:auto;line-height:1.8;text-justify:ideographic;margin-bottom:1em}.related-content{border-width:3px;border-style:solid;border-color:#000;padding:0 10px;margin-bottom:50px;margin-top:100px}.related-content li{margin:5px 0}.taxonomy-term{font-size:3rem}.gallery-img{text-align:center}.gallery-img span{text-align:center}.gallery-img-desc{font-size:.8em;font-weight:800}#disqus_thread{position:relative}#disqus_thread:after{content:"";display:block;height:55px;width:100%;position:absolute;bottom:0;background:#fff}@media screen and (max-width:600px){.header-title,.header-subtitle,.header-items{text-align:center}.posts-line{font-size:16px}.markdown-body{font-size:16px}.post-title{font-size:2rem}.post-content p{letter-spacing:.05em}}@media screen and (max-width:48em){.posts-category{display:none}}</style>
+  
+  
+    <style>.container,.container-fluid{margin-right:auto;margin-left:auto}.container-fluid{padding-right:2rem;padding-left:2rem}.row{box-sizing:border-box;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-flex:0;-ms-flex:0 1 auto;flex:initial;-webkit-box-orient:horizontal;-webkit-box-direction:normal;-ms-flex-direction:row;flex-direction:row;-ms-flex-wrap:wrap;flex-wrap:wrap;margin-right:-.5rem;margin-left:-.5rem}.row.reverse{-webkit-box-orient:horizontal;-webkit-box-direction:reverse;-ms-flex-direction:row-reverse;flex-direction:row-reverse}.col.reverse{-webkit-box-orient:vertical;-webkit-box-direction:reverse;-ms-flex-direction:column-reverse;flex-direction:column-reverse}.col-xs,.col-xs-1,.col-xs-10,.col-xs-11,.col-xs-12,.col-xs-2,.col-xs-3,.col-xs-4,.col-xs-5,.col-xs-6,.col-xs-7,.col-xs-8,.col-xs-9,.col-xs-offset-0,.col-xs-offset-1,.col-xs-offset-10,.col-xs-offset-11,.col-xs-offset-12,.col-xs-offset-2,.col-xs-offset-3,.col-xs-offset-4,.col-xs-offset-5,.col-xs-offset-6,.col-xs-offset-7,.col-xs-offset-8,.col-xs-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-xs{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-xs-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-xs-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-xs-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-xs-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-xs-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-xs-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-xs-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-xs-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-xs-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-xs-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-xs-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-xs-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-xs-offset-0{margin-left:0}.col-xs-offset-1{margin-left:8.33333333%}.col-xs-offset-2{margin-left:16.66666667%}.col-xs-offset-3{margin-left:25%}.col-xs-offset-4{margin-left:33.33333333%}.col-xs-offset-5{margin-left:41.66666667%}.col-xs-offset-6{margin-left:50%}.col-xs-offset-7{margin-left:58.33333333%}.col-xs-offset-8{margin-left:66.66666667%}.col-xs-offset-9{margin-left:75%}.col-xs-offset-10{margin-left:83.33333333%}.col-xs-offset-11{margin-left:91.66666667%}.start-xs{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-xs{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-xs{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-xs{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-xs{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-xs{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-xs{-ms-flex-pack:distribute;justify-content:space-around}.between-xs{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-xs{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-xs{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}@media only screen and (min-width:48em){.container{width:49rem}.col-sm,.col-sm-1,.col-sm-10,.col-sm-11,.col-sm-12,.col-sm-2,.col-sm-3,.col-sm-4,.col-sm-5,.col-sm-6,.col-sm-7,.col-sm-8,.col-sm-9,.col-sm-offset-0,.col-sm-offset-1,.col-sm-offset-10,.col-sm-offset-11,.col-sm-offset-12,.col-sm-offset-2,.col-sm-offset-3,.col-sm-offset-4,.col-sm-offset-5,.col-sm-offset-6,.col-sm-offset-7,.col-sm-offset-8,.col-sm-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-sm{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-sm-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-sm-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-sm-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-sm-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-sm-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-sm-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-sm-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-sm-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-sm-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-sm-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-sm-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-sm-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-sm-offset-0{margin-left:0}.col-sm-offset-1{margin-left:8.33333333%}.col-sm-offset-2{margin-left:16.66666667%}.col-sm-offset-3{margin-left:25%}.col-sm-offset-4{margin-left:33.33333333%}.col-sm-offset-5{margin-left:41.66666667%}.col-sm-offset-6{margin-left:50%}.col-sm-offset-7{margin-left:58.33333333%}.col-sm-offset-8{margin-left:66.66666667%}.col-sm-offset-9{margin-left:75%}.col-sm-offset-10{margin-left:83.33333333%}.col-sm-offset-11{margin-left:91.66666667%}.start-sm{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-sm{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-sm{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-sm{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-sm{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-sm{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-sm{-ms-flex-pack:distribute;justify-content:space-around}.between-sm{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-sm{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-sm{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}}@media only screen and (min-width:64em){.container{width:65rem}.col-md,.col-md-1,.col-md-10,.col-md-11,.col-md-12,.col-md-2,.col-md-3,.col-md-4,.col-md-5,.col-md-6,.col-md-7,.col-md-8,.col-md-9,.col-md-offset-0,.col-md-offset-1,.col-md-offset-10,.col-md-offset-11,.col-md-offset-12,.col-md-offset-2,.col-md-offset-3,.col-md-offset-4,.col-md-offset-5,.col-md-offset-6,.col-md-offset-7,.col-md-offset-8,.col-md-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-md{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-md-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-md-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-md-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-md-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-md-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-md-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-md-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-md-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-md-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-md-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-md-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-md-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-md-offset-0{margin-left:0}.col-md-offset-1{margin-left:8.33333333%}.col-md-offset-2{margin-left:16.66666667%}.col-md-offset-3{margin-left:25%}.col-md-offset-4{margin-left:33.33333333%}.col-md-offset-5{margin-left:41.66666667%}.col-md-offset-6{margin-left:50%}.col-md-offset-7{margin-left:58.33333333%}.col-md-offset-8{margin-left:66.66666667%}.col-md-offset-9{margin-left:75%}.col-md-offset-10{margin-left:83.33333333%}.col-md-offset-11{margin-left:91.66666667%}.start-md{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-md{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-md{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-md{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-md{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-md{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-md{-ms-flex-pack:distribute;justify-content:space-around}.between-md{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-md{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-md{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}}@media only screen and (min-width:75em){.container{width:76rem}.col-lg,.col-lg-1,.col-lg-10,.col-lg-11,.col-lg-12,.col-lg-2,.col-lg-3,.col-lg-4,.col-lg-5,.col-lg-6,.col-lg-7,.col-lg-8,.col-lg-9,.col-lg-offset-0,.col-lg-offset-1,.col-lg-offset-10,.col-lg-offset-11,.col-lg-offset-12,.col-lg-offset-2,.col-lg-offset-3,.col-lg-offset-4,.col-lg-offset-5,.col-lg-offset-6,.col-lg-offset-7,.col-lg-offset-8,.col-lg-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-lg{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-lg-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-lg-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-lg-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-lg-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-lg-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-lg-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-lg-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-lg-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-lg-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-lg-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-lg-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-lg-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-lg-offset-0{margin-left:0}.col-lg-offset-1{margin-left:8.33333333%}.col-lg-offset-2{margin-left:16.66666667%}.col-lg-offset-3{margin-left:25%}.col-lg-offset-4{margin-left:33.33333333%}.col-lg-offset-5{margin-left:41.66666667%}.col-lg-offset-6{margin-left:50%}.col-lg-offset-7{margin-left:58.33333333%}.col-lg-offset-8{margin-left:66.66666667%}.col-lg-offset-9{margin-left:75%}.col-lg-offset-10{margin-left:83.33333333%}.col-lg-offset-11{margin-left:91.66666667%}.start-lg{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-lg{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-lg{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-lg{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-lg{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-lg{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-lg{-ms-flex-pack:distribute;justify-content:space-around}.between-lg{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-lg{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-lg{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}}</style>
+  
+
+  
+
+  <link href="/index.xml" rel="alternate" type="application/rss+xml"
+    title="Wong Der Land">
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css?family=Bree+Serif|Bungee+Shade" rel="stylesheet">
+  
+  
+  
+
+  
+  
+</head>
+
+
+<body>
+    <article class="post " id="article">
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="site-header">
+                    
+<header>
+  <div class="header-title">
+    <a href="/"
+      >Wong Der Land</a
+    >
+  </div>
+  <div class="header-subtitle">READ ONLY</div>
+</header>
+<div class="row end-md center-xs header-items">
+  
+  <div class="header-item">
+    <a href="/categories/life" target="_blank">Life</a>
+  </div>
+  
+  <div class="header-item">
+    <a href="/categories/game" target="_blank">Game</a>
+  </div>
+  
+  <div class="header-item">
+    <a href="/categories/art" target="_blank">Art</a>
+  </div>
+  
+  <div class="header-item">
+    <a href="/categories/drama" target="_blank">Drama</a>
+  </div>
+  
+  <div class="header-item">
+    <a href="/categories/tech" target="_blank">Tech</a>
+  </div>
+  
+</div>
+<div class="row end-xs">
+   
+</div>
+<div class="header-line"></div>
+
+                </div>
+                <header class="post-header">
+                    <h1 class="post-title">GAMES101作业本——作业6：加速结构</h1>
+                    
+                    <div class="row post-desc">
+                        <div class="col-xs-6">
+                            
+                            <time class="post-date" datetime=" 2022-12-18 00:00:00 UTC">
+                                18 Dec 2022
+                            </time>
+                            
+                        </div>
+                        <div class="col-xs-6">
+                            
+                            <div class="post-author">
+                                
+                                
+                                
+                                Sylvia Wong
+                            </div>
+                            
+                        </div>
+                    </div>
+                    
+                </header>
+
+                <div class="post-content markdown-body">
+                    
+                    <h2 id="作业描述">作业描述</h2>
+<p>在之前的编程练习中实现了基础的光线追踪算法，具体而言是光线传输、光线与三角形求交。采用了这样的方法寻找光线与场景的交点：遍历场景中的所有物体，判断光线是否与它相交。在场景中的物体数量不大时，该做法可以取得良好的结果，但当物体数量增多、模型变得更加复杂，该做法将会变得非常低效。因此，需要加速结构来加速求交过程。在本次练习中，重点关注物体划分算法 Bounding Volume Hierarchy (BVH)。本练习要求实现 Ray-Bounding Volume 求交与 BVH 查找。</p>
+<p>首先，需要从上一次编程练习中引用以下函数：</p>
+<ul>
+<li><strong>Render()</strong> in Renderer.cpp: 将光线生成过程粘贴到此处，并且按照新框架更新相应调用的格式。</li>
+<li><strong>Triangle::getIntersection</strong> in Triangle.hpp: 将光线-三角形相交函数粘贴到此处，并且按照新框架更新相应相交信息的格式。</li>
+</ul>
+<p>在本次编程练习中，需要实现以下函数：</p>
+<ul>
+<li><strong>IntersectP(const Ray&amp; ray, const Vector3f&amp; invDir, const std::array&amp; dirIsNeg)</strong>  in the Bounds3.hpp: 这个函数的作用是判断包围盒 BoundingBox 与光线是否相交，需要按照课程介绍的算法实现求交过程。</li>
+<li><em><em>getIntersection(BVHBuildNode</em> node, const Ray ray)</em>* in BVH.cpp: 建立 BVH 之后，我们可以用它加速求交过程。该过程递归进行，将在其中调用你实现的 <strong>Bounds3::IntersectP</strong>.</li>
+</ul>
+<p>附加题：</p>
+<ul>
+<li><strong>SAH 查找</strong>：自学 SAH(Surface Area Heuristic) , 正 确实现 SAH 加速，并对比 BVH、SVH 的时间开销。(可参考 <a href="http://15462.courses.cs.cmu.edu/fall2015/lecture/acceleration/slide_024">http://15462.courses.cs.cmu.edu/fall2015/lecture/acceleration/slide_024</a>，也可以查找其他资料)</li>
+</ul>
+<h2 id="解题思路">解题思路</h2>
+<h3 id="1-修改render函数">1 修改Render()函数</h3>
+<p>作业框架发生了一些改变，根据数据类型的变化做一些相应的调整。eyepos 的位置在(-1, 5, 10)，屏幕的中心坐标就不在 (0,0,-1)了，而是位于 (-1,5,9)。但射线方向其实与作业5求法相同。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-c++" data-lang="c++"><span style="display:flex;"><span>Vector3f dir <span style="color:#ff79c6">=</span> normalize(Vector3f(x, y, <span style="color:#ff79c6">-</span><span style="color:#bd93f9">1</span>));
+</span></span><span style="display:flex;"><span>Ray ray <span style="color:#ff79c6">=</span> Ray(eye_pos, dir);
+</span></span><span style="display:flex;"><span>framebuffer[m<span style="color:#ff79c6">++</span>] <span style="color:#ff79c6">=</span> scene.castRay(ray, <span style="color:#bd93f9">0</span>);
+</span></span></code></pre></div><h3 id="2-修改trianglegetintersection">2 修改Triangle::getIntersection</h3>
+<p>上一次作业中函数判断光线是否与三角形相交并返回一个布尔值。此次作业中需要返回相交的信息。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-c++" data-lang="c++"><span style="display:flex;"><span><span style="color:#ff79c6">inline</span> Intersection Triangle<span style="color:#ff79c6">::</span>getIntersection(Ray ray)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    Intersection inter;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#6272a4">// 点积大于零，两向量夹角小于90度，此时与光线和三角形不可能相交
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#ff79c6">if</span> (dotProduct(ray.direction, normal) <span style="color:#ff79c6">&gt;</span> <span style="color:#bd93f9">0</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">return</span> inter;
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">double</span> u, v, t_tmp <span style="color:#ff79c6">=</span> <span style="color:#bd93f9">0</span>;
+</span></span><span style="display:flex;"><span>    Vector3f pvec <span style="color:#ff79c6">=</span> crossProduct(ray.direction, e2);
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">double</span> det <span style="color:#ff79c6">=</span> dotProduct(e1, pvec);
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">if</span> (fabs(det) <span style="color:#ff79c6">&lt;</span> EPSILON)
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">return</span> inter;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">double</span> det_inv <span style="color:#ff79c6">=</span> <span style="color:#bd93f9">1.</span> <span style="color:#ff79c6">/</span> det;
+</span></span><span style="display:flex;"><span>    Vector3f tvec <span style="color:#ff79c6">=</span> ray.origin <span style="color:#ff79c6">-</span> v0;
+</span></span><span style="display:flex;"><span>    u <span style="color:#ff79c6">=</span> dotProduct(tvec, pvec) <span style="color:#ff79c6">*</span> det_inv;
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">if</span> (u <span style="color:#ff79c6">&lt;</span> <span style="color:#bd93f9">0</span> <span style="color:#ff79c6">||</span> u <span style="color:#ff79c6">&gt;</span> <span style="color:#bd93f9">1</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">return</span> inter;
+</span></span><span style="display:flex;"><span>    Vector3f qvec <span style="color:#ff79c6">=</span> crossProduct(tvec, e1);
+</span></span><span style="display:flex;"><span>    v <span style="color:#ff79c6">=</span> dotProduct(ray.direction, qvec) <span style="color:#ff79c6">*</span> det_inv;
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">if</span> (v <span style="color:#ff79c6">&lt;</span> <span style="color:#bd93f9">0</span> <span style="color:#ff79c6">||</span> u <span style="color:#ff79c6">+</span> v <span style="color:#ff79c6">&gt;</span> <span style="color:#bd93f9">1</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">return</span> inter;
+</span></span><span style="display:flex;"><span>    t_tmp <span style="color:#ff79c6">=</span> dotProduct(e2, qvec) <span style="color:#ff79c6">*</span> det_inv;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#6272a4">// DONE: find ray triangle intersection
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#ff79c6">if</span> (t_tmp <span style="color:#ff79c6">&lt;</span> <span style="color:#bd93f9">0</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">return</span> inter;
+</span></span><span style="display:flex;"><span>    inter.happened <span style="color:#ff79c6">=</span> <span style="color:#8be9fd;font-style:italic">true</span>; <span style="color:#6272a4">// 是否相交
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    inter.coords <span style="color:#ff79c6">=</span> ray(t_tmp); <span style="color:#6272a4">// 交点坐标
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    inter.normal <span style="color:#ff79c6">=</span> normal; <span style="color:#6272a4">// 交点所在平面法线
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    inter.distance <span style="color:#ff79c6">=</span> t_tmp; <span style="color:#6272a4">// 光线出射时间
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    inter.obj <span style="color:#ff79c6">=</span> <span style="color:#ff79c6">this</span>; <span style="color:#6272a4">// 交点所在物体的物体类型
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    inter.m <span style="color:#ff79c6">=</span> m; <span style="color:#6272a4">// 三角形的材质
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">return</span> inter;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="3-实现intersectp函数">3 实现IntersectP函数</h3>
+<p>这个函数的作用是判断包围盒 BoundingBox 与光线是否相交。</p>
+<p><img src="/img/games101_hw_6/1.png" alt="1"></p>
+<p><img src="/img/games101_hw_6/2.png" alt="2"></p>
+<p>观察给出的<strong>Bounds3</strong>类，可知三维包围盒上是用两个点：三轴坐标最小点pMin和三轴坐标最大点pMax来表示，此时两个点刚好在包围盒的六个面上。结合射线的方程很容易能解出与每个面的交点。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-c++" data-lang="c++"><span style="display:flex;"><span><span style="color:#ff79c6">class</span> <span style="color:#50fa7b">Bounds3</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#ff79c6">public</span><span style="color:#ff79c6">:</span>
+</span></span><span style="display:flex;"><span>    Vector3f pMin, pMax; <span style="color:#6272a4">// two points to specify the bounding box
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    Bounds3()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#8be9fd">double</span> minNum <span style="color:#ff79c6">=</span> std<span style="color:#ff79c6">::</span>numeric_limits<span style="color:#ff79c6">&lt;</span><span style="color:#8be9fd">double</span><span style="color:#ff79c6">&gt;::</span>lowest();
+</span></span><span style="display:flex;"><span>        <span style="color:#8be9fd">double</span> maxNum <span style="color:#ff79c6">=</span> std<span style="color:#ff79c6">::</span>numeric_limits<span style="color:#ff79c6">&lt;</span><span style="color:#8be9fd">double</span><span style="color:#ff79c6">&gt;::</span>max();
+</span></span><span style="display:flex;"><span>        pMax <span style="color:#ff79c6">=</span> Vector3f(minNum, minNum, minNum);
+</span></span><span style="display:flex;"><span>        pMin <span style="color:#ff79c6">=</span> Vector3f(maxNum, maxNum, maxNum);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    Bounds3(<span style="color:#ff79c6">const</span> Vector3f p) <span style="color:#ff79c6">:</span> pMin(p), pMax(p) {}
+</span></span><span style="display:flex;"><span>    Bounds3(<span style="color:#ff79c6">const</span> Vector3f p1, <span style="color:#ff79c6">const</span> Vector3f p2)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        pMin <span style="color:#ff79c6">=</span> Vector3f(fmin(p1.x, p2.x), fmin(p1.y, p2.y), fmin(p1.z, p2.z));
+</span></span><span style="display:flex;"><span>        pMax <span style="color:#ff79c6">=</span> Vector3f(fmax(p1.x, p2.x), fmax(p1.y, p2.y), fmax(p1.z, p2.z));
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><p><img src="/img/games101_hw_6/3.png" alt="3"></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-c++" data-lang="c++"><span style="display:flex;"><span><span style="color:#ff79c6">inline</span> <span style="color:#8be9fd">bool</span> Bounds3<span style="color:#ff79c6">::</span>IntersectP(<span style="color:#ff79c6">const</span> Ray<span style="color:#ff79c6">&amp;</span> ray, <span style="color:#ff79c6">const</span> Vector3f<span style="color:#ff79c6">&amp;</span> invDir,
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">const</span> std<span style="color:#ff79c6">::</span>array<span style="color:#ff79c6">&lt;</span><span style="color:#8be9fd">int</span>, <span style="color:#bd93f9">3</span><span style="color:#ff79c6">&gt;&amp;</span> dirIsNeg) <span style="color:#ff79c6">const</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#6272a4">// invDir: ray direction(x,y,z), invDir=(1.0/x,1.0/y,1.0/z), use this because Multiply is faster that Division
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#6272a4">// dirIsNeg: ray direction(x,y,z), dirIsNeg=[int(x&gt;0),int(y&gt;0),int(z&gt;0)], use this to simplify your logic
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#6272a4">// Done: test if ray bound intersects
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#6272a4">// 化简了一下运算，没有使用dirIsNeg，实际上和每条轴分别运算并判断方向的解法一样
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>
+</span></span><span style="display:flex;"><span>    Vector3f tMin <span style="color:#ff79c6">=</span> Vector3f<span style="color:#ff79c6">::</span>Min((pMin <span style="color:#ff79c6">-</span> ray.origin) <span style="color:#ff79c6">*</span> invDir, (pMax <span style="color:#ff79c6">-</span> ray.origin) <span style="color:#ff79c6">*</span> invDir);
+</span></span><span style="display:flex;"><span>    Vector3f tMax <span style="color:#ff79c6">=</span> Vector3f<span style="color:#ff79c6">::</span>Max((pMin <span style="color:#ff79c6">-</span> ray.origin) <span style="color:#ff79c6">*</span> invDir, (pMax <span style="color:#ff79c6">-</span> ray.origin) <span style="color:#ff79c6">*</span> invDir);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> tEnter <span style="color:#ff79c6">=</span> std<span style="color:#ff79c6">::</span>max(tMin.x, std<span style="color:#ff79c6">::</span>max(tMin.y, tMin.z));
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">float</span> tExit <span style="color:#ff79c6">=</span> std<span style="color:#ff79c6">::</span>min(tMax.x, std<span style="color:#ff79c6">::</span>min(tMax.y, tMax.z));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">return</span> (tEnter <span style="color:#ff79c6">&lt;</span> tExit) <span style="color:#ff79c6">&amp;&amp;</span> (tExit <span style="color:#ff79c6">&gt;=</span> <span style="color:#bd93f9">0</span>);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="4-实现getintersection">4 实现getIntersection</h3>
+<p>递归遍历二叉树。</p>
+<p><img src="/img/games101_hw_6/4.png" alt="4"></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-c++" data-lang="c++"><span style="display:flex;"><span>Intersection BVHAccel<span style="color:#ff79c6">::</span>getIntersection(BVHBuildNode<span style="color:#ff79c6">*</span> node, <span style="color:#ff79c6">const</span> Ray<span style="color:#ff79c6">&amp;</span> ray) <span style="color:#ff79c6">const</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#6272a4">// DONE: Traverse the BVH to find intersection
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    Intersection isect;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#6272a4">// 没有交点
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#ff79c6">if</span> (node <span style="color:#ff79c6">==</span> <span style="color:#ff79c6">nullptr</span> <span style="color:#ff79c6">||</span> <span style="color:#ff79c6">!</span>node<span style="color:#ff79c6">-&gt;</span>bounds.IntersectP(ray, ray.direction_inv, { <span style="color:#bd93f9">0</span>,<span style="color:#bd93f9">0</span>,<span style="color:#bd93f9">0</span> }))
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">return</span> isect;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#6272a4">// 有交点且为叶子结点
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#ff79c6">if</span> (node<span style="color:#ff79c6">-&gt;</span>left <span style="color:#ff79c6">==</span> <span style="color:#ff79c6">nullptr</span> <span style="color:#ff79c6">&amp;&amp;</span> node<span style="color:#ff79c6">-&gt;</span>right <span style="color:#ff79c6">==</span> <span style="color:#ff79c6">nullptr</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// 调用obj子类：Triangle的getIntersection，即到叶子节点的包围盒开始与三角形求交
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        <span style="color:#ff79c6">return</span> node<span style="color:#ff79c6">-&gt;</span>object<span style="color:#ff79c6">-&gt;</span>getIntersection(ray);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Intersection hit1 <span style="color:#ff79c6">=</span> getIntersection(node<span style="color:#ff79c6">-&gt;</span>left, ray);
+</span></span><span style="display:flex;"><span>    Intersection hit2 <span style="color:#ff79c6">=</span> getIntersection(node<span style="color:#ff79c6">-&gt;</span>right, ray);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">return</span> hit1.distance <span style="color:#ff79c6">&lt;</span> hit2.distance <span style="color:#ff79c6">?</span> <span style="color:#8be9fd;font-style:italic">hit1</span> : hit2;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><img src="/img/games101_hw_6/5.png" alt="5"></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>BVH Generation complete: 
+</span></span><span style="display:flex;"><span>Time Taken: <span style="color:#bd93f9">0</span> hrs, <span style="color:#bd93f9">0</span> mins, <span style="color:#bd93f9">0</span> secs
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span> - Generating BVH...
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>BVH Generation complete: 
+</span></span><span style="display:flex;"><span>Time Taken: <span style="color:#bd93f9">0</span> hrs, <span style="color:#bd93f9">0</span> mins, <span style="color:#bd93f9">0</span> secs
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Render complete: <span style="color:#ff79c6">======================================================]</span> <span style="color:#bd93f9">100</span> %
+</span></span><span style="display:flex;"><span>Time taken: <span style="color:#bd93f9">0</span> hours
+</span></span><span style="display:flex;"><span>          : <span style="color:#bd93f9">0</span> minutes
+</span></span><span style="display:flex;"><span>          : <span style="color:#bd93f9">6</span> seconds
+</span></span></code></pre></div><p>使用BVH加速算法渲染作业模型耗时6秒。</p>
+<h3 id="附加sah查找">附加：SAH查找</h3>
+<p>BVH加速通常是选取三角形中位数位置分割子树，这种划分方式可以再优化。</p>
+<p><img src="/img/games101_hw_6/6.png" alt="6"></p>
+<p><img src="/img/games101_hw_6/7.png" alt="7"></p>
+<p><img src="/img/games101_hw_6/8.png" alt="8"></p>
+<p><img src="/img/games101_hw_6/9.png" alt="9"></p>
+<p>这里构建了一个评估函数计算节点的开销，优化的目标是划分空间时使这个式子的值最小。</p>
+<p>对于每个轴，将其等距离划分成B份，得到B-1个划分平面。对于第i个平面，把三角形的中点集合划分成两份，计算这两份的开销，选取开销最小的平面。</p>
+<p>计算三个轴，选开销最小的轴。</p>
+<p><img src="/img/games101_hw_6/10.png" alt="10"></p>
+<p>可能是Stanford  Bunny模型的面数太少，使用SAH加速后渲染时间与BVH无异，换了另一个面数更高的小牛的模型时间也还是一样。主要实现代码如下：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-c++" data-lang="c++"><span style="display:flex;"><span>BVHAccel<span style="color:#ff79c6">::</span>BVHAccel(std<span style="color:#ff79c6">::</span>vector<span style="color:#ff79c6">&lt;</span>Object<span style="color:#ff79c6">*&gt;</span> p, <span style="color:#8be9fd">int</span> maxPrimsInNode,
+</span></span><span style="display:flex;"><span>    SplitMethod splitMethod)
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">:</span> maxPrimsInNode(std<span style="color:#ff79c6">::</span>min(<span style="color:#bd93f9">255</span>, maxPrimsInNode)), splitMethod(splitMethod),
+</span></span><span style="display:flex;"><span>    primitives(std<span style="color:#ff79c6">::</span>move(p)) {
+</span></span><span style="display:flex;"><span>    time_t start, stop;
+</span></span><span style="display:flex;"><span>    time(<span style="color:#ff79c6">&amp;</span>start);
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">if</span> (primitives.empty())
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">return</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">if</span> (splitMethod <span style="color:#ff79c6">==</span> SplitMethod<span style="color:#ff79c6">::</span>NAIVE) {
+</span></span><span style="display:flex;"><span>        root <span style="color:#ff79c6">=</span> root <span style="color:#ff79c6">=</span> recursiveBuild(primitives);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">else</span> <span style="color:#50fa7b">if</span> (splitMethod <span style="color:#ff79c6">==</span> SplitMethod<span style="color:#ff79c6">::</span>SAH) {
+</span></span><span style="display:flex;"><span>        root <span style="color:#ff79c6">=</span> root <span style="color:#ff79c6">=</span> recursiveSAHBuild(primitives);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    time(<span style="color:#ff79c6">&amp;</span>stop);
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">double</span> diff <span style="color:#ff79c6">=</span> difftime(stop, start);
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">int</span> hrs <span style="color:#ff79c6">=</span> (<span style="color:#8be9fd">int</span>)diff <span style="color:#ff79c6">/</span> <span style="color:#bd93f9">3600</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">int</span> mins <span style="color:#ff79c6">=</span> ((<span style="color:#8be9fd">int</span>)diff <span style="color:#ff79c6">/</span> <span style="color:#bd93f9">60</span>) <span style="color:#ff79c6">-</span> (hrs <span style="color:#ff79c6">*</span> <span style="color:#bd93f9">60</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd">int</span> secs <span style="color:#ff79c6">=</span> (<span style="color:#8be9fd">int</span>)diff <span style="color:#ff79c6">-</span> (hrs <span style="color:#ff79c6">*</span> <span style="color:#bd93f9">3600</span>) <span style="color:#ff79c6">-</span> (mins <span style="color:#ff79c6">*</span> <span style="color:#bd93f9">60</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    printf(
+</span></span><span style="display:flex;"><span>        <span style="color:#f1fa8c">&#34;</span><span style="color:#f1fa8c">\r</span><span style="color:#f1fa8c">BVH Generation complete: </span><span style="color:#f1fa8c">\n</span><span style="color:#f1fa8c">Time Taken: %i hrs, %i mins, %i secs</span><span style="color:#f1fa8c">\n\n</span><span style="color:#f1fa8c">&#34;</span>,
+</span></span><span style="display:flex;"><span>        hrs, mins, secs);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>BVHBuildNode<span style="color:#ff79c6">*</span> BVHAccel<span style="color:#ff79c6">::</span>recursiveSAHBuild(std<span style="color:#ff79c6">::</span>vector<span style="color:#ff79c6">&lt;</span>Object<span style="color:#ff79c6">*&gt;</span> objects) {
+</span></span><span style="display:flex;"><span>    BVHBuildNode<span style="color:#ff79c6">*</span> node <span style="color:#ff79c6">=</span> <span style="color:#ff79c6">new</span> BVHBuildNode();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#6272a4">// Compute bounds of all primitives in BVH node
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    Bounds3 bounds;
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">for</span> (<span style="color:#8be9fd">int</span> i <span style="color:#ff79c6">=</span> <span style="color:#bd93f9">0</span>; i <span style="color:#ff79c6">&lt;</span> objects.size(); <span style="color:#ff79c6">++</span>i)
+</span></span><span style="display:flex;"><span>        bounds <span style="color:#ff79c6">=</span> Union(bounds, objects[i]<span style="color:#ff79c6">-&gt;</span>getBounds());
+</span></span><span style="display:flex;"><span>    <span style="color:#6272a4">// 剩下一个，直接设为叶子结点
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#ff79c6">if</span> (objects.size() <span style="color:#ff79c6">==</span> <span style="color:#bd93f9">1</span>) {
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// Create leaf _BVHBuildNode_
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        node<span style="color:#ff79c6">-&gt;</span>bounds <span style="color:#ff79c6">=</span> objects[<span style="color:#bd93f9">0</span>]<span style="color:#ff79c6">-&gt;</span>getBounds();
+</span></span><span style="display:flex;"><span>        node<span style="color:#ff79c6">-&gt;</span>object <span style="color:#ff79c6">=</span> objects[<span style="color:#bd93f9">0</span>];
+</span></span><span style="display:flex;"><span>        node<span style="color:#ff79c6">-&gt;</span>left <span style="color:#ff79c6">=</span> <span style="color:#ff79c6">nullptr</span>;
+</span></span><span style="display:flex;"><span>        node<span style="color:#ff79c6">-&gt;</span>right <span style="color:#ff79c6">=</span> <span style="color:#ff79c6">nullptr</span>;
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">return</span> node;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#6272a4">// 剩下两个，左子树一个右子树一个
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>    <span style="color:#ff79c6">else</span> <span style="color:#50fa7b">if</span> (objects.size() <span style="color:#ff79c6">==</span> <span style="color:#bd93f9">2</span>) {
+</span></span><span style="display:flex;"><span>        node<span style="color:#ff79c6">-&gt;</span>left <span style="color:#ff79c6">=</span> recursiveBuild(std<span style="color:#ff79c6">::</span>vector{ objects[<span style="color:#bd93f9">0</span>] });
+</span></span><span style="display:flex;"><span>        node<span style="color:#ff79c6">-&gt;</span>right <span style="color:#ff79c6">=</span> recursiveBuild(std<span style="color:#ff79c6">::</span>vector{ objects[<span style="color:#bd93f9">1</span>] });
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        node<span style="color:#ff79c6">-&gt;</span>bounds <span style="color:#ff79c6">=</span> Union(node<span style="color:#ff79c6">-&gt;</span>left<span style="color:#ff79c6">-&gt;</span>bounds, node<span style="color:#ff79c6">-&gt;</span>right<span style="color:#ff79c6">-&gt;</span>bounds);
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">return</span> node;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">else</span> {
+</span></span><span style="display:flex;"><span>        Bounds3 centroidBounds;
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// 求整体包围盒
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        <span style="color:#ff79c6">for</span> (<span style="color:#8be9fd">int</span> i <span style="color:#ff79c6">=</span> <span style="color:#bd93f9">0</span>; i <span style="color:#ff79c6">&lt;</span> objects.size(); <span style="color:#ff79c6">++</span>i)
+</span></span><span style="display:flex;"><span>            centroidBounds <span style="color:#ff79c6">=</span>
+</span></span><span style="display:flex;"><span>            Union(centroidBounds, objects[i]<span style="color:#ff79c6">-&gt;</span>getBounds().Centroid());
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// SAH相关参数
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        <span style="color:#8be9fd">float</span> Sn <span style="color:#ff79c6">=</span> centroidBounds.SurfaceArea();
+</span></span><span style="display:flex;"><span>        <span style="color:#8be9fd">int</span> B <span style="color:#ff79c6">=</span> <span style="color:#bd93f9">10</span>; <span style="color:#6272a4">// B is typically small than 32
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        <span style="color:#8be9fd">int</span> minCostCoor <span style="color:#ff79c6">=</span> <span style="color:#bd93f9">0</span>; <span style="color:#6272a4">// 最优分割轴
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        <span style="color:#8be9fd">int</span> minCostIndex <span style="color:#ff79c6">=</span> <span style="color:#bd93f9">0</span>; <span style="color:#6272a4">// 最优分割区块值
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        <span style="color:#8be9fd">float</span> minCost <span style="color:#ff79c6">=</span> std<span style="color:#ff79c6">::</span>numeric_limits<span style="color:#ff79c6">&lt;</span><span style="color:#8be9fd">float</span><span style="color:#ff79c6">&gt;::</span>infinity(); <span style="color:#6272a4">// 最小开销
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>
+</span></span><span style="display:flex;"><span>        <span style="color:#6272a4">// 分别计算三个轴
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>        <span style="color:#ff79c6">for</span> (<span style="color:#8be9fd">int</span> i <span style="color:#ff79c6">=</span> <span style="color:#bd93f9">0</span>; i <span style="color:#ff79c6">&lt;</span> <span style="color:#bd93f9">3</span>; <span style="color:#ff79c6">++</span>i) {
+</span></span><span style="display:flex;"><span>            <span style="color:#ff79c6">switch</span> (i) {
+</span></span><span style="display:flex;"><span>                <span style="color:#ff79c6">case</span> <span style="color:#bd93f9">0</span><span style="color:#ff79c6">:</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#6272a4">// 对x排序
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>                    std<span style="color:#ff79c6">::</span>sort(objects.begin(), objects.end(), [](<span style="color:#ff79c6">auto</span> f1, <span style="color:#ff79c6">auto</span> f2) {<span style="color:#ff79c6">return</span> f1<span style="color:#ff79c6">-&gt;</span>getBounds().Centroid().x <span style="color:#ff79c6">&lt;</span> f2<span style="color:#ff79c6">-&gt;</span>getBounds().Centroid().x;});
+</span></span><span style="display:flex;"><span>                    <span style="color:#ff79c6">break</span>;
+</span></span><span style="display:flex;"><span>                <span style="color:#ff79c6">case</span> <span style="color:#bd93f9">1</span><span style="color:#ff79c6">:</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#6272a4">// 对y排序
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>                    std<span style="color:#ff79c6">::</span>sort(objects.begin(), objects.end(), [](<span style="color:#ff79c6">auto</span> f1, <span style="color:#ff79c6">auto</span> f2) {<span style="color:#ff79c6">return</span> f1<span style="color:#ff79c6">-&gt;</span>getBounds().Centroid().y <span style="color:#ff79c6">&lt;</span> f2<span style="color:#ff79c6">-&gt;</span>getBounds().Centroid().y;});
+</span></span><span style="display:flex;"><span>                    <span style="color:#ff79c6">break</span>;
+</span></span><span style="display:flex;"><span>                <span style="color:#ff79c6">case</span> <span style="color:#bd93f9">2</span><span style="color:#ff79c6">:</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#6272a4">// 对z排序
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>                    std<span style="color:#ff79c6">::</span>sort(objects.begin(), objects.end(), [](<span style="color:#ff79c6">auto</span> f1, <span style="color:#ff79c6">auto</span> f2) {<span style="color:#ff79c6">return</span> f1<span style="color:#ff79c6">-&gt;</span>getBounds().Centroid().z <span style="color:#ff79c6">&lt;</span> f2<span style="color:#ff79c6">-&gt;</span>getBounds().Centroid().z;});
+</span></span><span style="display:flex;"><span>                    <span style="color:#ff79c6">break</span>;
+</span></span><span style="display:flex;"><span>                <span style="color:#ff79c6">default</span><span style="color:#ff79c6">:</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#ff79c6">break</span>;
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>            <span style="color:#ff79c6">for</span> (<span style="color:#8be9fd">int</span> j <span style="color:#ff79c6">=</span> <span style="color:#bd93f9">1</span>; j <span style="color:#ff79c6">&lt;</span> B; <span style="color:#ff79c6">++</span>j) {
+</span></span><span style="display:flex;"><span>                <span style="color:#ff79c6">auto</span> beginning <span style="color:#ff79c6">=</span> objects.begin();
+</span></span><span style="display:flex;"><span>                <span style="color:#ff79c6">auto</span> middling <span style="color:#ff79c6">=</span> objects.begin() <span style="color:#ff79c6">+</span> (objects.size() <span style="color:#ff79c6">*</span> j <span style="color:#ff79c6">/</span> B);
+</span></span><span style="display:flex;"><span>                <span style="color:#ff79c6">auto</span> ending <span style="color:#ff79c6">=</span> objects.end();
+</span></span><span style="display:flex;"><span>                <span style="color:#ff79c6">auto</span> leftShapes <span style="color:#ff79c6">=</span> std<span style="color:#ff79c6">::</span>vector<span style="color:#ff79c6">&lt;</span>Object<span style="color:#ff79c6">*&gt;</span>(beginning, middling);
+</span></span><span style="display:flex;"><span>                <span style="color:#ff79c6">auto</span> rightShapes <span style="color:#ff79c6">=</span> std<span style="color:#ff79c6">::</span>vector<span style="color:#ff79c6">&lt;</span>Object<span style="color:#ff79c6">*&gt;</span>(middling, ending);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                Bounds3 leftBounds, rightBounds;
+</span></span><span style="display:flex;"><span>                <span style="color:#ff79c6">for</span> (<span style="color:#8be9fd">int</span> k <span style="color:#ff79c6">=</span> <span style="color:#bd93f9">0</span>; k <span style="color:#ff79c6">&lt;</span> leftShapes.size(); <span style="color:#ff79c6">++</span>k)
+</span></span><span style="display:flex;"><span>                    leftBounds <span style="color:#ff79c6">=</span>
+</span></span><span style="display:flex;"><span>                    Union(leftBounds, leftShapes[k]<span style="color:#ff79c6">-&gt;</span>getBounds().Centroid());
+</span></span><span style="display:flex;"><span>                <span style="color:#ff79c6">for</span> (<span style="color:#8be9fd">int</span> k <span style="color:#ff79c6">=</span> <span style="color:#bd93f9">0</span>; k <span style="color:#ff79c6">&lt;</span> rightShapes.size(); <span style="color:#ff79c6">++</span>k)
+</span></span><span style="display:flex;"><span>                    rightBounds <span style="color:#ff79c6">=</span>
+</span></span><span style="display:flex;"><span>                    Union(rightBounds, rightShapes[k]<span style="color:#ff79c6">-&gt;</span>getBounds().Centroid());
+</span></span><span style="display:flex;"><span>                <span style="color:#8be9fd">float</span> SA <span style="color:#ff79c6">=</span> leftBounds.SurfaceArea();
+</span></span><span style="display:flex;"><span>                <span style="color:#8be9fd">float</span> SB <span style="color:#ff79c6">=</span> rightBounds.SurfaceArea();
+</span></span><span style="display:flex;"><span>                <span style="color:#8be9fd">float</span> cost <span style="color:#ff79c6">=</span> <span style="color:#bd93f9">1</span> <span style="color:#ff79c6">+</span> (leftShapes.size() <span style="color:#ff79c6">*</span> SA <span style="color:#ff79c6">+</span> rightShapes.size() <span style="color:#ff79c6">*</span> SB) <span style="color:#ff79c6">/</span> Sn;
+</span></span><span style="display:flex;"><span>                <span style="color:#ff79c6">if</span> (cost <span style="color:#ff79c6">&lt;</span> minCost) {
+</span></span><span style="display:flex;"><span>                    minCost <span style="color:#ff79c6">=</span> cost;
+</span></span><span style="display:flex;"><span>                    minCostIndex <span style="color:#ff79c6">=</span> j;
+</span></span><span style="display:flex;"><span>                    minCostCoor <span style="color:#ff79c6">=</span> i;
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">switch</span> (minCostCoor) {
+</span></span><span style="display:flex;"><span>            <span style="color:#ff79c6">case</span> <span style="color:#bd93f9">0</span><span style="color:#ff79c6">:</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#6272a4">// x轴最长，对x排序
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>                std<span style="color:#ff79c6">::</span>sort(objects.begin(), objects.end(), [](<span style="color:#ff79c6">auto</span> f1, <span style="color:#ff79c6">auto</span> f2) {<span style="color:#ff79c6">return</span> f1<span style="color:#ff79c6">-&gt;</span>getBounds().Centroid().x <span style="color:#ff79c6">&lt;</span> f2<span style="color:#ff79c6">-&gt;</span>getBounds().Centroid().x;});
+</span></span><span style="display:flex;"><span>                <span style="color:#ff79c6">break</span>;
+</span></span><span style="display:flex;"><span>            <span style="color:#ff79c6">case</span> <span style="color:#bd93f9">1</span><span style="color:#ff79c6">:</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#6272a4">// y轴最长，对y排序
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>                std<span style="color:#ff79c6">::</span>sort(objects.begin(), objects.end(), [](<span style="color:#ff79c6">auto</span> f1, <span style="color:#ff79c6">auto</span> f2) {<span style="color:#ff79c6">return</span> f1<span style="color:#ff79c6">-&gt;</span>getBounds().Centroid().y <span style="color:#ff79c6">&lt;</span> f2<span style="color:#ff79c6">-&gt;</span>getBounds().Centroid().y;});
+</span></span><span style="display:flex;"><span>                <span style="color:#ff79c6">break</span>;
+</span></span><span style="display:flex;"><span>            <span style="color:#ff79c6">case</span> <span style="color:#bd93f9">2</span><span style="color:#ff79c6">:</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#6272a4">// z轴最长，对z排序
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4"></span>                std<span style="color:#ff79c6">::</span>sort(objects.begin(), objects.end(), [](<span style="color:#ff79c6">auto</span> f1, <span style="color:#ff79c6">auto</span> f2) {<span style="color:#ff79c6">return</span> f1<span style="color:#ff79c6">-&gt;</span>getBounds().Centroid().z <span style="color:#ff79c6">&lt;</span> f2<span style="color:#ff79c6">-&gt;</span>getBounds().Centroid().z;});
+</span></span><span style="display:flex;"><span>                <span style="color:#ff79c6">break</span>;
+</span></span><span style="display:flex;"><span>            <span style="color:#ff79c6">default</span><span style="color:#ff79c6">:</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#ff79c6">break</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">auto</span> beginning <span style="color:#ff79c6">=</span> objects.begin();
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">auto</span> middling <span style="color:#ff79c6">=</span> objects.begin() <span style="color:#ff79c6">+</span> (objects.size() <span style="color:#ff79c6">*</span> minCostIndex <span style="color:#ff79c6">/</span> B);
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">auto</span> ending <span style="color:#ff79c6">=</span> objects.end();
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">auto</span> leftShapes <span style="color:#ff79c6">=</span> std<span style="color:#ff79c6">::</span>vector<span style="color:#ff79c6">&lt;</span>Object<span style="color:#ff79c6">*&gt;</span>(beginning, middling);
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">auto</span> rightShapes <span style="color:#ff79c6">=</span> std<span style="color:#ff79c6">::</span>vector<span style="color:#ff79c6">&lt;</span>Object<span style="color:#ff79c6">*&gt;</span>(middling, ending);
+</span></span><span style="display:flex;"><span>        assert(objects.size() <span style="color:#ff79c6">==</span> (leftShapes.size() <span style="color:#ff79c6">+</span> rightShapes.size()));
+</span></span><span style="display:flex;"><span>        node<span style="color:#ff79c6">-&gt;</span>left <span style="color:#ff79c6">=</span> recursiveSAHBuild(leftShapes);
+</span></span><span style="display:flex;"><span>        node<span style="color:#ff79c6">-&gt;</span>right <span style="color:#ff79c6">=</span> recursiveSAHBuild(rightShapes);
+</span></span><span style="display:flex;"><span>        node<span style="color:#ff79c6">-&gt;</span>bounds <span style="color:#ff79c6">=</span> Union(node<span style="color:#ff79c6">-&gt;</span>left<span style="color:#ff79c6">-&gt;</span>bounds, node<span style="color:#ff79c6">-&gt;</span>right<span style="color:#ff79c6">-&gt;</span>bounds);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">return</span> node;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div>
+                </div>
+
+                <div class="row middle-xs">
+                    <div class="col-xs-12">
+                        Tags:
+                        
+                        <div class="post-tags">
+                            <a href="/tags/%E6%8A%80%E6%9C%AF%E6%9D%82%E8%B0%88/">
+                                技术杂谈
+                            </a>
+                        </div>
+                        
+                        <div class="post-tags">
+                            <a href="/tags/games101/">
+                                GAMES101
+                            </a>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+                <div class="row">
+                    
+                    <div class="col-xs-12"><br><br>
+                        
+                        <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img
+                                alt="Creative Commons License" style="border-width:0"
+                                src="/img/cc.png" class="loading"
+                                data-was-processed="true"></a>
+                    </div>
+                </div>
+
+                
+
+<div class="related-content">
+  <h3>Related Posts</h3>
+  <ul>
+    
+    <li><a href="/2022/12/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A5%E5%85%89%E7%BA%BF%E4%B8%8E%E4%B8%89%E8%A7%92%E5%BD%A2%E7%9B%B8%E4%BA%A4/">GAMES101作业本——作业5：光线与三角形相交</a></li>
+    
+    <li><a href="/2022/12/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A4b%C3%A9zier-%E6%9B%B2%E7%BA%BF/">GAMES101作业本——作业4：Bézier 曲线</a></li>
+    
+    <li><a href="/2022/12/games101%E4%BD%9C%E4%B8%9A%E6%9C%AC%E4%BD%9C%E4%B8%9A3pipeline-and-shading/">GAMES101作业本——作业3：Pipeline and Shading</a></li>
+    
+  </ul>
+</div>
+
+
+
+                
+                
+                <div style="height: 50px;"></div>
+                
+                
+
+                <div class="site-footer">
+  
+  <div class="site-footer-item">
+    <a href="https://github.com/jiuyuezai" target="_blank">GitHub</a>
+  </div>
+  
+  <div class="site-footer-item">
+    <a href="https://www.zhihu.com/people/jiuyuezai" target="_blank">Zhihu</a>
+  </div>
+  
+</div>
+
+            </div>
+        </div>
+    </article>
+
+    
+<script src="/js/lazyload.min.js"></script>
+<script>
+  var lazyImage = new LazyLoad({
+    container: document.getElementById('article')
+  });
+</script>
+
+<script>
+  
+  
+    
+    
+  
+</script>
+
+    
+
+</body>
+
+</html>
